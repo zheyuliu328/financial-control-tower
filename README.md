@@ -1,154 +1,117 @@
 <div align="center">
-  <h1>🗼 Financial Control Tower</h1>
-  <p><strong>An ERP audit system that catches revenue leakage and fraud using real supply chain data.</strong></p>
+  <h1>📊 VaR Risk Dashboard</h1>
+  <p><strong>A market risk engine that calculates 99% Value-at-Risk and validates it with statistical backtesting.</strong></p>
   
-  <a href="https://github.com/zheyuliu328/financial-control-tower/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/zheyuliu328/financial-control-tower?style=for-the-badge&logo=github&labelColor=000000&logoColor=FFFFFF&color=0500ff" /></a>
-  <a href="https://github.com/zheyuliu328/financial-control-tower/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge&labelColor=000000&color=00C853" /></a>
-  <a href="https://www.python.org/"><img alt="Python" src="https://img.shields.io/badge/python-3.8+-blue?style=for-the-badge&logo=python&labelColor=000000&logoColor=FFFFFF" /></a>
+  <a href="https://github.com/zheyuliu328/risk-var-dashboard/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/zheyuliu328/risk-var-dashboard?style=for-the-badge&logo=github&labelColor=000000&logoColor=FFFFFF&color=0500ff" /></a>
+  <a href="https://github.com/zheyuliu328/risk-var-dashboard/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge&labelColor=000000&color=00C853" /></a>
+  <a href="https://www.python.org/"><img alt="Python" src="https://img.shields.io/badge/python-3.9+-blue?style=for-the-badge&logo=python&labelColor=000000&logoColor=FFFFFF" /></a>
+</div>
+
+<br>
+
+<div align="center">
+  <img src="images/var_dashboard.png" alt="VaR Dashboard" width="800"/>
 </div>
 
 <br>
 
 ## What is this?
 
-This project simulates how real companies audit their finances. It takes 180,000 rows of actual supply chain transactions and splits them into three separate databases, just like a real ERP system would. Then it runs automated checks to find problems like missing revenue, timing fraud, and money-losing orders.
+This project builds a Value-at-Risk engine using real S&P 500 data from 2020 to 2026. It calculates how much money you could lose on a bad day at the 99% confidence level, then checks whether the model actually works by counting how often losses exceeded the prediction.
 
-Think of it as building a mini version of what auditors at PwC or Deloitte do, but fully automated with Python and SQL.
-
-<br>
-
-## The Architecture
-
-```mermaid
-graph TD
-    subgraph "Raw Data"
-        CSV[("📄 DataCo CSV<br>180k transactions")]
-    end
-
-    subgraph "Three Separate Databases"
-        OPS[("🏭 Operations DB<br>Orders & Shipping")]
-        FIN[("💰 Finance DB<br>GL & Receivables")]
-        AUD[("🛡️ Audit DB<br>Risk Logs")]
-    end
-
-    subgraph "Control Tower Engine"
-        REC[("🔍 Reconciliation<br>Ops vs Finance")]
-        FRD[("⚖️ Fraud Detection<br>Timing & Margins")]
-        RPT[("📊 Reporting<br>P&L Analysis")]
-    end
-
-    CSV -->|Setup Script| OPS
-    CSV -->|Setup Script| FIN
-    OPS --> REC
-    FIN --> REC
-    OPS --> FRD
-    REC -->|Log Issues| AUD
-    FRD -->|Log Issues| AUD
-    OPS --> RPT
-```
-
-The idea is simple. Operations tracks what got shipped. Finance tracks what money is owed. The Control Tower compares them and flags anything that does not match.
+The punchline is that the model failed more than it should have. It predicted a 1% breach rate but the actual rate was 1.67%. The Kupiec test confirmed this statistically. This is exactly what risk managers worry about: normal distributions underestimate tail risk during market stress.
 
 <br>
 
-## What Problems Does It Solve?
+## The Key Finding
 
-| Problem | What It Means | How We Catch It |
-|:--------|:--------------|:----------------|
-| Revenue Leakage | Goods shipped but never invoiced. Company loses money. | LEFT JOIN ops vs finance, find NULL in finance side |
-| Timing Fraud | Shipment recorded before order exists. Could be fake sales. | Check if shipping_date < order_date |
-| Negative Margins | Selling at a loss on purpose or by mistake. | Filter orders where profit < 0 |
-| Data Mismatch | Order says $100, invoice says $90. Someone made an error. | Compare amounts with 0.01 tolerance |
+The model uses a rolling 252-day window to estimate volatility and calculate VaR. When we backtest against actual returns, we see more breaches than expected.
+
+| Metric | Expected | Actual |
+|:-------|:---------|:-------|
+| Breach Rate | 1.00% | 1.67% |
+| Kupiec LR Statistic | — | 4.77 |
+| Test Result | — | Reject H₀ |
+
+What does this mean? The standard normal assumption underestimates risk. In practice, you would need Expected Shortfall or stress testing to capture the true tail risk.
 
 <br>
 
 ## Quick Start
 
-Three commands and you are running.
+Three commands and you have a working risk dashboard.
 
 ```bash
 pip install -r requirements.txt
 ```
 
 ```bash
-python scripts/setup_project.py
+python download_data.py
 ```
 
-This downloads the real DataCo dataset from Kaggle and builds three SQLite databases automatically.
+This fetches S&P 500 price data from Yahoo Finance.
 
 ```bash
 python main.py
 ```
 
-This runs the full audit. You will see reconciliation results, fraud flags, and P&L reports printed to your terminal.
+This calculates VaR, runs the backtest, and generates the dashboard image.
 
 <br>
 
-## What Happens When You Run It
+## How It Works
 
-The system prints a full audit report. Here is what each section does.
+The engine implements two VaR calculation methods and one validation test.
 
-**Reconciliation** compares every order in the operations database against the finance database. If an order exists in ops but not in finance, that is revenue leakage. If both exist but amounts differ, that is a data quality issue.
+**Parametric VaR** assumes returns follow a normal distribution. It uses the mean and standard deviation from the past 252 trading days to estimate the 99th percentile loss.
 
-**Compliance Audit** scans for red flags. Orders where goods shipped before the order was placed get flagged as timing fraud. Orders with negative profit get flagged as margin erosion.
+**Historical Simulation VaR** makes no distribution assumption. It simply takes the 1st percentile of actual historical returns as the VaR estimate.
 
-**P&L Report** aggregates revenue and profit by month and by region. This is the kind of summary a CFO would look at.
-
-All flagged issues get written to the audit database so you can query them later.
+**Kupiec Test** checks whether the number of VaR breaches matches the expected rate. If the model is correct, breaches should occur about 1% of the time. The test uses a likelihood ratio to determine if the observed breach rate is statistically different from 1%.
 
 <br>
 
 ## Project Structure
 
 ```
-financial-control-tower/
-├── scripts/
-│   └── setup_project.py      # Downloads data and builds databases
-├── src/
-│   └── audit/
-│       └── financial_control_tower.py   # The main engine
-│   └── data_engineering/
-│       └── init_erp_databases.py        # Creates the three DBs
+risk-var-dashboard/
+├── main.py              # Main engine: VaR calculation and backtesting
+├── download_data.py     # Fetches S&P 500 data from Yahoo Finance
 ├── data/
-│   ├── db_operations.db      # Orders and shipping
-│   ├── db_finance.db         # GL and receivables
-│   └── audit.db              # Flagged issues
-├── docs/
-│   └── SQL_RECONCILIATION.md # Explains the SQL logic
-├── main.py                   # Entry point
+│   └── sp500.csv        # Historical price data
+├── images/
+│   └── var_dashboard.png    # Output visualization
+├── DEVELOPMENT_NOTES.md     # Technical notes
 └── requirements.txt
 ```
 
 <br>
 
-## The Core SQL Logic
+## The Math Behind It
 
-The heart of reconciliation is a LEFT JOIN. Here is the concept in plain SQL.
+For Parametric VaR at confidence level α:
 
-```sql
-SELECT 
-    ops.order_id,
-    ops.sales AS expected,
-    fin.invoice_amount AS booked
-FROM operations.sales_orders AS ops
-LEFT JOIN finance.accounts_receivable AS fin
-    ON ops.order_id = fin.order_id
-WHERE 
-    fin.order_id IS NULL              -- Missing in finance
-    OR ABS(ops.sales - fin.invoice_amount) > 0.01   -- Amount mismatch
+```
+VaR_α = μ + σ × Z_α
 ```
 
-When `fin.order_id IS NULL`, that means operations shipped something but finance never recorded it. That is a problem.
+Where μ is the rolling mean return, σ is the rolling standard deviation, and Z_α is the quantile of the standard normal distribution. For 99% confidence, Z_0.01 ≈ -2.33.
+
+For the Kupiec test, the likelihood ratio is:
+
+```
+LR = -2 × ln[(1-p)^(n-x) × p^x] + 2 × ln[(1-x/n)^(n-x) × (x/n)^x]
+```
+
+Where p is the expected breach probability (0.01), n is the number of observations, and x is the number of actual breaches. Under the null hypothesis, LR follows a chi-squared distribution with 1 degree of freedom.
 
 <br>
 
-## Why This Project Matters
+## Why This Matters
 
-Most data projects on GitHub are notebooks that read a CSV and make charts. This one is different.
+VaR is the standard risk metric used by banks, hedge funds, and regulators. Basel III requires banks to calculate VaR daily and hold capital against potential losses.
 
-It simulates a real enterprise environment where data lives in separate systems. It shows you understand that operations and finance do not always agree. It demonstrates SQL skills beyond SELECT star. It produces an audit trail that could actually be used in a real company.
-
-If you are interviewing for a data or finance role, this project shows you can think like a business analyst, not just a script runner.
+But VaR has a known weakness: it assumes returns are normally distributed, which underestimates tail risk. This project demonstrates that weakness empirically. The 1.67% breach rate during a period that included COVID-19 volatility shows why risk managers cannot rely on VaR alone.
 
 <br>
 
@@ -156,16 +119,12 @@ If you are interviewing for a data or finance role, this project shows you can t
 
 | Tool | Purpose |
 |:-----|:--------|
-| Python 3.8+ | Main language |
-| SQLite | Lightweight databases |
+| Python 3.9+ | Main language |
+| NumPy | Numerical computation |
 | Pandas | Data manipulation |
-| KaggleHub | Dataset download |
-
-<br>
-
-## Data Source
-
-The DataCo Smart Supply Chain dataset from Kaggle. It has real-world messiness like multiple currencies, suspected fraud flags, and negative margins. No synthetic data, no random generators.
+| SciPy | Statistical tests |
+| Matplotlib | Visualization |
+| yfinance | Market data |
 
 <br>
 
@@ -173,12 +132,13 @@ The DataCo Smart Supply Chain dataset from Kaggle. It has real-world messiness l
 
 **Zheyu Liu**
 
-This is a portfolio project demonstrating ERP audit concepts. Feel free to fork and extend.
+This is a portfolio project demonstrating market risk concepts. The methodology follows standard industry practice for VaR calculation and backtesting.
 
 <br>
 
 ---
 
 <div align="center">
-  <sub>Built for learning. Inspired by real enterprise audit systems.</sub>
+  <sub>Built for learning. Inspired by Basel III risk frameworks.</sub>
 </div>
+
