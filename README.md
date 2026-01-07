@@ -1,49 +1,184 @@
-## Financial Control Tower: ERP Audit System
+<div align="center">
+  <h1>🗼 Financial Control Tower</h1>
+  <p><strong>An ERP audit system that catches revenue leakage and fraud using real supply chain data.</strong></p>
+  
+  <a href="https://github.com/zheyuliu328/financial-control-tower/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/zheyuliu328/financial-control-tower?style=for-the-badge&logo=github&labelColor=000000&logoColor=FFFFFF&color=0500ff" /></a>
+  <a href="https://github.com/zheyuliu328/financial-control-tower/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge&labelColor=000000&color=00C853" /></a>
+  <a href="https://www.python.org/"><img alt="Python" src="https://img.shields.io/badge/python-3.8+-blue?style=for-the-badge&logo=python&labelColor=000000&logoColor=FFFFFF" /></a>
+</div>
 
-This repo shows how to build a finance control tower on real supply‑chain data. It uses the real DataCo CSV (about 180k rows) and turns it into three SQLite databases that mimic a real ERP split: operations, finance, and audit. The main goal is to catch revenue leakage, timing fraud, and negative margin orders, and then print simple P&L and regional profit views in the terminal.
+<br>
 
-Here is the big picture:
+## What is this?
+
+This project simulates how real companies audit their finances. It takes 180,000 rows of actual supply chain transactions and splits them into three separate databases, just like a real ERP system would. Then it runs automated checks to find problems like missing revenue, timing fraud, and money-losing orders.
+
+Think of it as building a mini version of what auditors at PwC or Deloitte do, but fully automated with Python and SQL.
+
+<br>
+
+## The Architecture
+
 ```mermaid
 graph TD
-    subgraph "External World"
-        RawData[("Raw Data (DataCo CSV)")]
+    subgraph "Raw Data"
+        CSV[("📄 DataCo CSV<br>180k transactions")]
     end
 
-    subgraph "Enterprise ERP Simulation"
-        OpsDB[("🗄️ Operations DB\n(Sales/Shipping)")]
-        FinDB[("🗄️ Finance DB\n(GL/AR)")]
-        AuditDB[("🛡️ Audit DB\n(Risk Logs)")]
+    subgraph "Three Separate Databases"
+        OPS[("🏭 Operations DB<br>Orders & Shipping")]
+        FIN[("💰 Finance DB<br>GL & Receivables")]
+        AUD[("🛡️ Audit DB<br>Risk Logs")]
     end
 
-    subgraph "The Solution: Financial Control Tower"
-        ETL[("⚙️ ETL Engine")]
-        Recon[("🔍 Reconciliation Engine\n(Ops vs Finance)")]
-        Compliance[("⚖️ Compliance Engine\n(Fraud Rules)")]
+    subgraph "Control Tower Engine"
+        REC[("🔍 Reconciliation<br>Ops vs Finance")]
+        FRD[("⚖️ Fraud Detection<br>Timing & Margins")]
+        RPT[("📊 Reporting<br>P&L Analysis")]
     end
 
-    RawData -->|Init Script| OpsDB
-    RawData -->|Init Script| FinDB
-    OpsDB -->|Extract Orders| Recon
-    FinDB -->|Extract AR| Recon
-    OpsDB -->|Extract Logistics| Compliance
-    Recon -->|Log Discrepancies| AuditDB
-    Compliance -->|Log Risks| AuditDB
+    CSV -->|Setup Script| OPS
+    CSV -->|Setup Script| FIN
+    OPS --> REC
+    FIN --> REC
+    OPS --> FRD
+    REC -->|Log Issues| AUD
+    FRD -->|Log Issues| AUD
+    OPS --> RPT
 ```
 
-How it helps: the operations database represents what the business thinks happened, the finance database represents what the books say, and the audit database records gaps and red flags. The control tower compares operations and finance to find missing accounts receivable or amount mismatches, flags shipments that happen before the order date, and finds orders with negative profit. Everything runs as Python code using SQL queries on SQLite, and all findings are written into `audit.db`.
+The idea is simple. Operations tracks what got shipped. Finance tracks what money is owed. The Control Tower compares them and flags anything that does not match.
 
-How to run it: first install the Python packages from `requirements.txt`. Then run `python scripts/setup_project.py` to download the DataCo dataset, place the CSV into `data/raw`, create the three databases and load the data. After that, run `python main.py` to execute reconciliation, compliance checks and P&L output. When it finishes, open `data/audit.db` with `sqlite3` or any GUI and inspect the `audit_logs` table.
+<br>
 
-About the data: the DataCo Smart Supply Chain dataset is a public Kaggle dataset with messy, realistic data. It includes odd dates, suspected fraud flags and negative margins. This project does not create fake rows or use random generators; it works directly on that dataset.
+## What Problems Does It Solve?
 
-Code layout in simple words: `scripts/setup_project.py` is the one‑click setup script that downloads data and builds the databases. `src/data_engineering/init_erp_databases.py` takes the raw CSV and splits it into three SQLite databases with the right tables. `src/audit/financial_control_tower.py` is the core logic that runs reconciliation, timing checks, negative margin checks and prints the P&L and regional summaries. `main.py` is the entry point that checks the environment and starts the control tower. The file `docs/SQL_RECONCILIATION.md` explains the SQL reconciliation logic in plain SQL, step by step.
+| Problem | What It Means | How We Catch It |
+|:--------|:--------------|:----------------|
+| Revenue Leakage | Goods shipped but never invoiced. Company loses money. | LEFT JOIN ops vs finance, find NULL in finance side |
+| Timing Fraud | Shipment recorded before order exists. Could be fake sales. | Check if shipping_date < order_date |
+| Negative Margins | Selling at a loss on purpose or by mistake. | Filter orders where profit < 0 |
+| Data Mismatch | Order says $100, invoice says $90. Someone made an error. | Compare amounts with 0.01 tolerance |
 
-Why this matters: it shows how to move from a flat CSV file to a small, realistic multi‑database ERP‑style setup, how to use SQL joins to catch revenue leakage and data mismatches, how to detect simple fraud‑like patterns based on dates and margins, and how to write a repeatable audit log instead of just eyeballing a notebook chart.
+<br>
 
-How to extend it: if you want more rules, you can add extra checks in `audit_supply_chain_risks()` or new methods in `FinancialControlTower`. If you want richer reports, you can add queries in `generate_financial_statements()` or build a dashboard on top of the same databases.
+## Quick Start
 
-Educational value: this repo is meant as a clear, end‑to‑end example for students and junior developers who want to talk about real finance and operations integration in interviews. It keeps the tools simple (Python and SQLite) but still shows realistic patterns like separate operations and finance stores, SQL‑driven reconciliation logic and an audit trail.
+Three commands and you are running.
 
-Author: Zheyu Liu.  
-Date: 2026‑01‑07.  
-Résumé tagline: Full‑Stack ERP Audit Simulator.
+```bash
+pip install -r requirements.txt
+```
+
+```bash
+python scripts/setup_project.py
+```
+
+This downloads the real DataCo dataset from Kaggle and builds three SQLite databases automatically.
+
+```bash
+python main.py
+```
+
+This runs the full audit. You will see reconciliation results, fraud flags, and P&L reports printed to your terminal.
+
+<br>
+
+## What Happens When You Run It
+
+The system prints a full audit report. Here is what each section does.
+
+**Reconciliation** compares every order in the operations database against the finance database. If an order exists in ops but not in finance, that is revenue leakage. If both exist but amounts differ, that is a data quality issue.
+
+**Compliance Audit** scans for red flags. Orders where goods shipped before the order was placed get flagged as timing fraud. Orders with negative profit get flagged as margin erosion.
+
+**P&L Report** aggregates revenue and profit by month and by region. This is the kind of summary a CFO would look at.
+
+All flagged issues get written to the audit database so you can query them later.
+
+<br>
+
+## Project Structure
+
+```
+financial-control-tower/
+├── scripts/
+│   └── setup_project.py      # Downloads data and builds databases
+├── src/
+│   └── audit/
+│       └── financial_control_tower.py   # The main engine
+│   └── data_engineering/
+│       └── init_erp_databases.py        # Creates the three DBs
+├── data/
+│   ├── db_operations.db      # Orders and shipping
+│   ├── db_finance.db         # GL and receivables
+│   └── audit.db              # Flagged issues
+├── docs/
+│   └── SQL_RECONCILIATION.md # Explains the SQL logic
+├── main.py                   # Entry point
+└── requirements.txt
+```
+
+<br>
+
+## The Core SQL Logic
+
+The heart of reconciliation is a LEFT JOIN. Here is the concept in plain SQL.
+
+```sql
+SELECT 
+    ops.order_id,
+    ops.sales AS expected,
+    fin.invoice_amount AS booked
+FROM operations.sales_orders AS ops
+LEFT JOIN finance.accounts_receivable AS fin
+    ON ops.order_id = fin.order_id
+WHERE 
+    fin.order_id IS NULL              -- Missing in finance
+    OR ABS(ops.sales - fin.invoice_amount) > 0.01   -- Amount mismatch
+```
+
+When `fin.order_id IS NULL`, that means operations shipped something but finance never recorded it. That is a problem.
+
+<br>
+
+## Why This Project Matters
+
+Most data projects on GitHub are notebooks that read a CSV and make charts. This one is different.
+
+It simulates a real enterprise environment where data lives in separate systems. It shows you understand that operations and finance do not always agree. It demonstrates SQL skills beyond SELECT star. It produces an audit trail that could actually be used in a real company.
+
+If you are interviewing for a data or finance role, this project shows you can think like a business analyst, not just a script runner.
+
+<br>
+
+## Tech Stack
+
+| Tool | Purpose |
+|:-----|:--------|
+| Python 3.8+ | Main language |
+| SQLite | Lightweight databases |
+| Pandas | Data manipulation |
+| KaggleHub | Dataset download |
+
+<br>
+
+## Data Source
+
+The DataCo Smart Supply Chain dataset from Kaggle. It has real-world messiness like multiple currencies, suspected fraud flags, and negative margins. No synthetic data, no random generators.
+
+<br>
+
+## Author
+
+**Zheyu Liu**
+
+This is a portfolio project demonstrating ERP audit concepts. Feel free to fork and extend.
+
+<br>
+
+---
+
+<div align="center">
+  <sub>Built for learning. Inspired by real enterprise audit systems.</sub>
+</div>
