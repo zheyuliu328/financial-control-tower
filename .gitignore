@@ -1,0 +1,41 @@
+# 数据文件
+data/raw/
+data/processed/
+data/reports/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 环境变量
+.env
+.env.local
+
+# Kaggle API
+.kaggle/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb
+
+# 日志
+*.log
+
