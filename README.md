@@ -1,190 +1,244 @@
-<div align="center">
-  <h1>📰 NLP Sentiment Factor for Hong Kong Equities</h1>
-  <p><strong>An end-to-end pipeline that turns news sentiment into a quantitative trading signal.</strong></p>
-  
-  <a href="https://github.com/zheyuliu328/hstech-nlp-quant-factor/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/zheyuliu328/hstech-nlp-quant-factor/actions/workflows/ci.yml/badge.svg" /></a>
-  <a href="https://github.com/zheyuliu328/hstech-nlp-quant-factor/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/zheyuliu328/hstech-nlp-quant-factor?style=for-the-badge&logo=github&labelColor=000000&logoColor=FFFFFF&color=0500ff" /></a>
-  <a href="https://opensource.org/licenses/MIT"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge&labelColor=000000" /></a>
-  <a href="https://www.python.org/"><img alt="Python: 3.8+" src="https://img.shields.io/badge/Python-3.8+-blue.svg?style=for-the-badge&logo=python&labelColor=000000&logoColor=FFFFFF" /></a>
-</div>
+<p align="center">
+  <img src="https://img.icons8.com/fluency/96/control-tower.png" alt="Control Tower" width="80"/>
+</p>
 
-<br>
+<h1 align="center">Financial Control Tower</h1>
 
-<div align="center">
-  <table>
-    <tr>
-      <td align="center"><strong>IC Timeseries</strong></td>
-      <td align="center"><strong>Quantile Backtest</strong></td>
-      <td align="center"><strong>Style Correlation</strong></td>
-    </tr>
-    <tr>
-      <td><img src="reports/figs/ic_timeseries.png" width="250"/></td>
-      <td><img src="reports/figs/deciles.png" width="250"/></td>
-      <td><img src="reports/figs/corr_heatmap.png" width="250"/></td>
-    </tr>
-  </table>
-</div>
+<p align="center">
+  <strong>An ERP audit system that catches revenue leakage and fraud using real supply chain data.</strong>
+</p>
 
-<br>
+<p align="center">
+  <a href="https://github.com/zheyuliu328/financial-control-tower/stargazers"><img src="https://img.shields.io/github/stars/zheyuliu328/financial-control-tower?style=for-the-badge&logo=github&labelColor=000000&color=0500ff" alt="Stars"/></a>
+  <a href="#"><img src="https://img.shields.io/badge/python-3.8+-blue?style=for-the-badge&logo=python&labelColor=000000&logoColor=white" alt="Python"/></a>
+  <a href="#"><img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge&labelColor=000000" alt="License"/></a>
+  <a href="#"><img src="https://img.shields.io/badge/data-180k_rows-orange?style=for-the-badge&labelColor=000000" alt="Data"/></a>
+</p>
 
-## What is this?
+<p align="center">
+  <a href="#the-problem">The Problem</a> •
+  <a href="#the-solution">The Solution</a> •
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#how-it-works">How It Works</a> •
+  <a href="#tech-stack">Tech Stack</a>
+</p>
 
-This project answers a simple question: does news sentiment predict stock returns in Hong Kong?
+---
 
-The pipeline scrapes financial news, scores sentiment using both a Transformer model and a financial lexicon, then tests whether that sentiment score has any predictive power. It covers the entire Hang Seng Composite Index, about 500 stocks.
+## The Problem
 
-The answer turns out to be yes, but not in the way you might expect. High sentiment predicts lower returns, not higher. This is a classic mean-reversion signal. Stocks that get hyped in the news tend to underperform in the following days.
+In real companies, the operations team and the finance team use different systems. Operations tracks what got shipped. Finance tracks what money is owed. These two systems often disagree.
 
-<br>
+When they disagree, bad things happen. Goods get shipped but never invoiced. Revenue leaks out. Fraud goes undetected. Manual reconciliation takes weeks and still misses things.
 
-## The Key Finding
+This project automates that reconciliation using SQL and Python.
 
-The sentiment factor shows a consistent negative correlation with forward returns. This means when news is positive, future returns tend to be negative, and vice versa.
+---
 
-| Metric | Value |
-|:-------|:------|
-| Rank IC | -0.08 |
-| T-statistic | -1.3 |
-| Information Ratio | -0.39 |
-| Style Correlation | Low |
+## The Solution
 
-The negative IC suggests a mean-reversion strategy: short the stocks with positive sentiment, long the stocks with negative sentiment. The low correlation with traditional style factors means this signal could add diversification to an existing portfolio.
+This system simulates a real enterprise environment with three separate databases, then runs automated checks to find discrepancies.
 
-<br>
+```mermaid
+graph TD
+    subgraph "Data Source"
+        CSV[("📄 DataCo CSV<br/>180k transactions")]
+    end
+
+    subgraph "ERP Simulation"
+        OPS[("🏭 Operations DB<br/>Orders & Shipping")]
+        FIN[("💰 Finance DB<br/>GL & Receivables")]
+        AUD[("🛡️ Audit DB<br/>Risk Logs")]
+    end
+
+    subgraph "Control Tower"
+        REC[("🔍 Reconciliation<br/>Ops vs Finance")]
+        FRD[("⚖️ Fraud Detection<br/>Timing & Margins")]
+        RPT[("📊 Reporting<br/>P&L Analysis")]
+    end
+
+    CSV --> OPS
+    CSV --> FIN
+    OPS --> REC
+    FIN --> REC
+    OPS --> FRD
+    REC --> AUD
+    FRD --> AUD
+    OPS --> RPT
+```
+
+---
+
+## What It Catches
+
+| Risk Type | Description | Severity |
+|:----------|:------------|:---------|
+| **Revenue Leakage** | Order shipped but never invoiced | 🔴 High |
+| **Amount Mismatch** | Order says $100, invoice says $90 | 🟠 Medium |
+| **Timing Fraud** | Shipment recorded before order exists | 🔴 Critical |
+| **Negative Margin** | Selling at a loss | 🟠 Medium |
+
+---
 
 ## Quick Start
 
-Two commands and the entire pipeline runs.
+**Step 1** — Install dependencies
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+**Step 2** — Download data and build databases
+
 ```bash
-bash run.sh
+python scripts/setup_project.py
 ```
 
-This executes the full pipeline: data ingestion, sentiment scoring, factor construction, and validation. Results appear in the `reports/` directory.
+This fetches the DataCo dataset from Kaggle and creates three SQLite databases.
 
-<br>
+**Step 3** — Run the audit
+
+```bash
+python main.py
+```
+
+This executes reconciliation, fraud detection, and P&L reporting. Results are printed to terminal and logged to `audit.db`.
+
+---
 
 ## How It Works
 
-The pipeline has four stages.
+### Reconciliation Engine
 
-**Data Ingestion** pulls news articles from EventRegistry API and price data from Yahoo Finance. It covers all constituents of the Hang Seng Composite Index.
+The core logic is a SQL LEFT JOIN. We take all orders from the operations database and try to match them against invoices in the finance database.
 
-**Sentiment Scoring** uses a dual-engine approach. A RoBERTa-based Transformer model captures deep semantic meaning, while a financial lexicon provides stability for domain-specific terms. The final score is a weighted combination.
-
-**Factor Construction** aggregates daily sentiment scores by stock and standardizes them cross-sectionally. This produces a factor that can be compared across the universe.
-
-**Validation** calculates Information Coefficient (correlation between factor and forward returns), runs quantile backtests (do high-sentiment stocks outperform?), and checks correlation with traditional style factors (size, value, momentum).
-
-<br>
-
-## The Architecture
-
-```mermaid
-graph LR
-    subgraph "Data Layer"
-        NEWS[("📰 News API")]
-        PRICE[("📈 Price Data")]
-    end
-
-    subgraph "Processing Layer"
-        NLP[("🤖 Transformer Model")]
-        LEX[("📖 Financial Lexicon")]
-        MERGE[("⚖️ Score Merger")]
-    end
-
-    subgraph "Analysis Layer"
-        FACTOR[("📊 Factor Builder")]
-        IC[("📉 IC Analysis")]
-        QUANT[("📈 Quantile Test")]
-    end
-
-    NEWS --> NLP
-    NEWS --> LEX
-    NLP --> MERGE
-    LEX --> MERGE
-    MERGE --> FACTOR
-    PRICE --> FACTOR
-    FACTOR --> IC
-    FACTOR --> QUANT
+```sql
+SELECT 
+    ops.order_id,
+    ops.sales AS expected,
+    fin.invoice_amount AS booked
+FROM operations.sales_orders AS ops
+LEFT JOIN finance.accounts_receivable AS fin
+    ON ops.order_id = fin.order_id
+WHERE 
+    fin.order_id IS NULL              -- Missing in finance
+    OR ABS(ops.sales - fin.invoice_amount) > 0.01
 ```
 
-<br>
+When `fin.order_id IS NULL`, that means operations shipped something but finance never recorded it. That is revenue leakage.
+
+### Fraud Detection
+
+The system scans for two red flags.
+
+**Timing Fraud** — If the shipping date is earlier than the order date, something is wrong. Either the data was entered incorrectly, or someone is backdating orders.
+
+**Negative Margins** — If an order has negative profit, the company lost money on that sale. This could be a pricing error, unauthorized discount, or intentional fraud.
+
+### Audit Trail
+
+Every issue found gets written to the audit database with a timestamp, severity level, and description. This creates a complete audit trail that can be reviewed later.
+
+---
 
 ## Project Structure
 
 ```
-hstech-nlp-quant-factor/
+financial-control-tower/
+├── scripts/
+│   └── setup_project.py          # Downloads data, builds DBs
 ├── src/
-│   ├── hk_universe_builder.py    # Builds stock universe
-│   ├── download_hk_prices.py     # Fetches price data
-│   ├── data_pipe.py              # News ingestion
-│   ├── sentiment_top.py          # Sentiment scoring
-│   ├── hk_factor_generator.py    # Factor construction
-│   └── validate_factor.py        # IC and quantile tests
-├── config/
-│   └── hk_market.yaml            # Configuration
+│   ├── audit/
+│   │   └── financial_control_tower.py   # Main engine
+│   └── data_engineering/
+│       └── init_erp_databases.py        # DB schema
 ├── data/
-│   ├── universe/                 # Stock lists
-│   └── processed/                # Processed data
-├── reports/
-│   └── figs/                     # Output charts
-├── run.sh                        # Main entry point
+│   ├── db_operations.db          # Orders, shipping
+│   ├── db_finance.db             # GL, receivables
+│   └── audit.db                  # Risk logs
+├── docs/
+│   └── SQL_RECONCILIATION.md     # Technical docs
+├── main.py
 └── requirements.txt
 ```
 
-<br>
+---
 
-## Current Limitations
+## Sample Output
 
-The backtest period needs to be longer. A robust factor validation requires at least 24 months of data across different market regimes.
+```
+======================================================================
+🗼 Financial Control Tower
+📅 Audit Date: 2026-01-07 10:30:15
+======================================================================
 
-Transaction costs are not modeled. The current backtest assumes zero slippage and zero commissions, which overstates real-world performance.
+🔍 [Process 1] Reconciliation: Ops vs Finance
+   → Operations orders: 123,456
+   → Finance invoices: 123,400
+   ⚠️  56 orders missing in finance (Revenue Leakage)
 
-Risk neutralization is incomplete. A production system would need to neutralize against industry and style factors using a Barra-style risk model.
+🛡️ [Process 2] Compliance Audit
+   ⚠️  127 timing anomalies detected
+   ⚠️  89 negative margin orders found
 
-<br>
+📊 [Process 3] P&L Report
+   Month       Revenue         Profit      Margin
+   2023-06     $127,450       $25,490      20.0%
+   2023-05     $118,300       $23,660      20.0%
 
-## Next Steps
+✅ Audit complete. 272 issues logged to audit.db
+```
 
-Expand the historical dataset to cover multiple market cycles. Implement data quality assertions to catch ingestion errors early.
-
-Integrate a proper risk model for factor neutralization. This isolates the pure alpha from systematic exposures.
-
-Add realistic transaction cost models. Hong Kong has stamp duty and relatively wide spreads for small caps.
-
-<br>
+---
 
 ## Tech Stack
 
-| Tool | Purpose |
-|:-----|:--------|
-| Python 3.8+ | Main language |
-| Transformers (HuggingFace) | Sentiment model |
-| DuckDB | Data warehouse |
-| Pandas / NumPy | Data processing |
-| Matplotlib | Visualization |
-| EventRegistry | News API |
-| yfinance | Price data |
+| Component | Technology |
+|:----------|:-----------|
+| Language | Python 3.8+ |
+| Databases | SQLite (3 separate DBs) |
+| Data Processing | Pandas, NumPy |
+| Data Source | Kaggle DataCo Dataset |
+| Architecture | Multi-DB ERP Simulation |
 
-<br>
+---
+
+## Why This Project Matters
+
+Most data projects on GitHub read a CSV and make charts. This one is different.
+
+It simulates a real enterprise environment where data lives in separate systems. It shows you understand that operations and finance do not always agree. It demonstrates SQL skills beyond `SELECT *`. It produces an audit trail that could actually be used in a real company.
+
+If you are interviewing for a data, finance, or audit role, this project shows you can think like a business analyst, not just a script runner.
+
+---
+
+## Data Source
+
+The [DataCo Smart Supply Chain Dataset](https://www.kaggle.com/datasets/shashwatwork/dataco-smart-supply-chain-for-big-data-analysis) from Kaggle. 180,000 real transactions with real-world messiness: multiple currencies, suspected fraud flags, negative margins, and date inconsistencies.
+
+---
+
+## Documentation
+
+For detailed technical documentation, see:
+
+| Document | Description |
+|:---------|:------------|
+| [SQL_RECONCILIATION.md](docs/SQL_RECONCILIATION.md) | Deep dive into the SQL logic |
+| [QUICKSTART.md](QUICKSTART.md) | Step-by-step setup guide |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | System design overview |
+
+---
 
 ## Author
 
 **Zheyu Liu**
 
-This is a portfolio project demonstrating quantitative research methodology. The pipeline follows standard practices used by systematic hedge funds and asset managers.
-
-<br>
+This is a portfolio project demonstrating ERP audit concepts. The methodology follows standard practices used by internal audit teams and Big Four consulting firms.
 
 ---
 
-<div align="center">
-  <sub>Built for learning. Inspired by production quant research pipelines.</sub>
-</div>
-
+<p align="center">
+  <sub>Built for learning. Inspired by real enterprise audit systems.</sub>
+</p>
