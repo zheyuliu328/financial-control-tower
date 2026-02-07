@@ -12,22 +12,15 @@ echo "✓ Python version: $python_version"
 if ! python -c "import pandas" 2>/dev/null; then
     echo "📦 Installing dependencies..."
     pip install -q -r requirements.txt
-fi
-echo "✓ Dependencies installed"
-
-# Setup project (download sample data or use fallback)
-echo ""
-echo "📊 Setting up project..."
-if python scripts/setup_project.py 2>/dev/null; then
-    echo "✓ Sample data ready"
+    echo "✓ Dependencies installed"
 else
-    echo "⚠️  Using built-in sample data (Kaggle download skipped)"
+    echo "✓ Dependencies already installed"
 fi
 
-# Run audit
+# Run quick demo
 echo ""
-echo "🔍 Running financial audit..."
-python main.py
+echo "🔍 Running quick demo with sample data..."
+python quick_demo.py
 
 # Summary
 echo ""
@@ -35,10 +28,9 @@ echo "=========================================="
 echo "✅ Quick start complete!"
 echo ""
 echo "Output files:"
-echo "  • data/audit.db - Audit trail database"
-echo "  • data/reconciliation_report.xlsx - Reconciliation report"
+ls -lh artifacts/ 2>/dev/null || echo "  (No artifacts)"
 echo ""
 echo "Next steps:"
-echo "  • View dashboard: streamlit run main.py"
+echo "  • View full system: python main.py --sample"
 echo "  • Read docs: cat README.md"
 echo "=========================================="

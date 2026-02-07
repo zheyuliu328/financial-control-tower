@@ -4,6 +4,7 @@ DataCo Global Supply Chain & Finance Audit System
 """
 
 import sys
+import argparse
 from pathlib import Path
 
 # 添加项目根目录到路径
@@ -13,7 +14,51 @@ sys.path.insert(0, str(project_root))
 from src.audit.financial_control_tower import FinancialControlTower
 
 
+def run_sample_mode():
+    """Demo mode with sample data"""
+    print("\n[Demo Mode] 使用内置样例数据...")
+    
+    import sqlite3
+    import pandas as pd
+    
+    # Create demo databases
+    data_dir = project_root / 'data'
+    data_dir.mkdir(exist_ok=True)
+    
+    # Create sample operations database
+    conn_ops = sqlite3.connect(data_dir / 'db_operations.db')
+    df_ops = pd.read_csv(project_root / 'data' / 'sample' / 'operations_sample.csv')
+    df_ops.to_sql('sales_orders', conn_ops, if_exists='replace', index=False)
+    conn_ops.close()
+    
+    # Create sample finance database
+    conn_fin = sqlite3.connect(data_dir / 'db_finance.db')
+    df_fin = pd.read_csv(project_root / 'data' / 'sample' / 'finance_sample.csv')
+    df_fin.to_sql('order_revenue', conn_fin, if_exists='replace', index=False)
+    conn_fin.close()
+    
+    # Create audit database
+    conn_audit = sqlite3.connect(data_dir / 'audit.db')
+    conn_audit.execute('''
+        CREATE TABLE IF NOT EXISTS audit_logs (
+            id INTEGER PRIMARY KEY,
+            timestamp TEXT,
+            severity TEXT,
+            description TEXT
+        )
+    ''')
+    conn_audit.commit()
+    conn_audit.close()
+    
+    print("✓ 样例数据库已创建")
+    return True
+
+
 def main():
+    parser = argparse.ArgumentParser(description='Financial Control Tower')
+    parser.add_argument('--sample', action='store_true', help='Use sample data (demo mode)')
+    args = parser.parse_args()
+    
     print("=" * 70)
     print("   DataCo Global Supply Chain & Finance Audit System")
     print("=" * 70)
@@ -21,16 +66,15 @@ def main():
     print("\n[Step 1] 检查环境...")
     db_path = project_root / 'data' / 'db_operations.db'
     
-    if not db_path.exists():
+    if args.sample:
+        run_sample_mode()
+    elif not db_path.exists():
         print("\n⚠️  未检测到数据库文件")
         print("=" * 70)
-        print("请先运行项目初始化脚本:")
-        print("  python scripts/setup_project.py")
+        print("运行方式:")
+        print("  1. Demo模式: python main.py --sample")
+        print("  2. 完整数据: python scripts/setup_project.py")
         print("=" * 70)
-        print("\n该脚本将:")
-        print("  1. 下载 DataCo 数据集 (通过 kagglehub)")
-        print("  2. 创建三个 ERP 数据库 (Operations, Finance, Audit)")
-        print("  3. 导入并分类数据")
         return
 
     print("✓ 数据库文件已就绪")

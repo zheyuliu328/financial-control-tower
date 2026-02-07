@@ -1,0 +1,15 @@
+{
+  "mode": "DEMO",
+  "timestamp": "2026-02-08T00:36:43.965516",
+  "summary": {
+    "total_orders": 8,
+    "matched": 8,
+    "mismatched": 0,
+    "match_rate": "100.0%"
+  },
+  "output_files": [
+    "data/db_operations.db",
+    "data/db_finance.db",
+    "data/audit.db"
+  ]
+}
