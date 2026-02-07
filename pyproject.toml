@@ -1,0 +1,63 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "financial-control-tower"
+version = "2.0.0"
+description = "Enterprise-grade ERP audit system with fraud detection and compliance tracking"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Zheyu Liu", email = "zheyuliu328@gmail.com"}
+]
+keywords = ["erp", "audit", "fraud-detection", "compliance", "financial-control"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Topic :: Office/Business :: Financial",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "pandas>=1.5.0",
+    "numpy>=1.21.0",
+    "streamlit>=1.15.0",
+    "plotly>=5.0.0",
+    "kagglehub>=0.1.0",
+    "python-dotenv>=0.19.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=22.0.0",
+    "ruff>=0.0.200",
+]
+
+[project.scripts]
+fct = "financial_control_tower.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/zheyuliu328/financial-control-tower"
+Documentation = "https://github.com/zheyuliu328/financial-control-tower#readme"
+Repository = "https://github.com/zheyuliu328/financial-control-tower"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/financial_control_tower"]
+
+[tool.black]
+line-length = 100
+target-version = ['py39']
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "--cov=financial_control_tower --cov-report=term-missing"
