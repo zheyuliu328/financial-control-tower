@@ -1,0 +1,77 @@
+# Gitleaks 配置
+# 用于检测代码中的敏感信息泄露
+
+title = "Gitleaks Config"
+
+[extend]
+# 使用默认规则作为基础
+useDefault = true
+
+[[rules]]
+id = "custom-api-key"
+description = "Custom API Key patterns"
+regex = '''(?i)(api[_-]?key|apikey|api_token)[\s]*[=:]+[\s]*['"][a-zA-Z0-9_\-]{16,}['"]'''
+tags = ["api", "key"]
+keywords = ["api_key", "apikey", "api-key", "api_token"]
+
+[[rules]]
+id = "custom-database-url"
+description = "Database connection strings"
+regex = '''(?i)(mongodb|mysql|postgresql|postgres|redis)://[a-zA-Z0-9._-]+:[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+'''
+tags = ["database", "connection"]
+keywords = ["mongodb://", "mysql://", "postgresql://", "postgres://", "redis://"]
+
+[[rules]]
+id = "custom-private-key"
+description = "Private key detection"
+regex = '''-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----'''
+tags = ["private-key", "crypto"]
+keywords = ["-----BEGIN"]
+
+[[rules]]
+id = "custom-aws-key"
+description = "AWS Access Key ID"
+regex = '''(A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}'''
+tags = ["aws", "api"]
+keywords = ["AKIA", "ASIA", "A3T"]
+
+[[rules]]
+id = "custom-secret-key"
+description = "Generic Secret Key"
+regex = '''(?i)(secret[_-]?key|secretkey|client_secret)[\s]*[=:]+[\s]*['"][a-zA-Z0-9_\-]{16,}['"]'''
+tags = ["secret", "key"]
+keywords = ["secret_key", "secretkey", "client_secret"]
+
+[[rules]]
+id = "custom-password-in-code"
+description = "Password in code"
+regex = '''(?i)(password|passwd|pwd)[\s]*[=:]+[\s]*['"][^'"]{4,}['"]'''
+tags = ["password", "credential"]
+keywords = ["password", "passwd", "pwd"]
+
+[allowlist]
+description = "Global allowlist"
+paths = [
+    '''gitleaks.toml''',
+    '''\.git/''',
+    '''node_modules/''',
+    '''\.venv/''',
+    '''venv/''',
+    '''__pycache__/''',
+    '''\.pytest_cache/''',
+    '''\.mypy_cache/''',
+    '''dist/''',
+    '''build/''',
+    '''\.egg-info/''',
+]
+regexes = [
+    # 允许示例/文档中的假密钥
+    '''EXAMPLE_KEY''',
+    '''YOUR_API_KEY''',
+    '''YOUR_API_KEY_HERE''',
+    '''xxxxxxxxxxxx''',
+    '''example\.com''',
+    '''test_key''',
+    '''dummy_key''',
+]
+commits = []
