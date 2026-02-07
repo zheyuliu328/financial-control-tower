@@ -1,0 +1,5 @@
+transaction_id,amount,date,account_code,description
+TXN001,1000.00,2024-01-15,1000,Sales Revenue
+TXN002,-500.00,2024-01-16,2000,Refund
+TXN003,2500.00,2024-01-17,1000,Sales Revenue
+TXN004,800.00,2024-01-18,,Missing Account

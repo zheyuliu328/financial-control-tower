@@ -1,0 +1,19 @@
+{
+  "run_id": "20260208_011527",
+  "version": "2.0.0",
+  "timestamp": "2026-02-08T01:15:27.439891",
+  "input_file": "data/sample_erp.csv",
+  "rows_processed": 4,
+  "anomalies_found": 2,
+  "anomaly_list": [
+    {
+      "row": 1,
+      "type": "negative_amount",
+      "value": -500.0
+    },
+    {
+      "row": 3,
+      "type": "missing_account_code"
+    }
+  ]
+}
