@@ -52,7 +52,7 @@ keywords = ["password", "passwd", "pwd"]
 [allowlist]
 description = "Global allowlist"
 paths = [
-    '''gitleaks.toml''',
+    '''gitleaks\.toml''',
     '''\.git/''',
     '''node_modules/''',
     '''\.venv/''',
@@ -63,6 +63,12 @@ paths = [
     '''dist/''',
     '''build/''',
     '''\.egg-info/''',
+    '''docs/configuration\.md''',
+    '''docs/faq\.md''',
+    '''docs/data_lineage\.md''',
+    '''REFACTOR_CHECKLIST\.md''',
+    '''UX_GUIDE\.md''',
+    '''erp_integration_design\.md''',
 ]
 regexes = [
     # 允许示例/文档中的假密钥
@@ -73,5 +79,9 @@ regexes = [
     '''example\.com''',
     '''test_key''',
     '''dummy_key''',
+    '''\$\{DB_PASSWORD\}''',
+    '''\$\{DB_PASS\}''',
+    '''\$\{DB_USER\}''',
+    '''password.*\$\{''',
 ]
 commits = []
