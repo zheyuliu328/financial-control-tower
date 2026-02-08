@@ -3,7 +3,10 @@
 import glob
 import subprocess
 
+import pytest
 
+
+@pytest.mark.e2e
 def test_run_real():
     """Test run-real path"""
     result = subprocess.run(

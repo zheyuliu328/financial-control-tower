@@ -2,16 +2,13 @@
 
 import os
 import sys
-import unittest
+
+import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 
-class TestBasic(unittest.TestCase):
-    def test_import(self):
-        """Test basic import"""
-        self.assertTrue(True)
-
-
-if __name__ == "__main__":
-    unittest.main()
+@pytest.mark.unit
+def test_import():
+    """Test basic import"""
+    assert True
