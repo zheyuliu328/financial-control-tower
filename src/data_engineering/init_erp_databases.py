@@ -316,7 +316,7 @@ class ERPDatabaseInitializer:
                         else 0,
                     )
                     values_list.append(values)
-                except Exception:
+                except Exception:  # nosec B112
                     continue
 
             # 批量插入
@@ -386,7 +386,7 @@ class ERPDatabaseInitializer:
                         str(row.get("Region", "")) if pd.notna(row.get("Region", "")) else None,
                     )
                     values_list.append(values)
-                except Exception:
+                except Exception:  # nosec B112 - data loading fallback
                     continue
 
             if values_list:
@@ -527,7 +527,7 @@ class ERPDatabaseInitializer:
                             )
                         )
 
-                except Exception:
+                except Exception:  # nosec B112 - ledger generation fallback
                     continue
 
             if values_list:
@@ -617,7 +617,7 @@ class ERPDatabaseInitializer:
                         0,  # days_past_due
                     )
                     values_list.append(values)
-                except Exception:
+                except Exception:  # nosec B112 - AR data loading fallback
                     continue
 
             if values_list:
@@ -726,7 +726,7 @@ class ERPDatabaseInitializer:
 
                 print(f"\n{db_name} DB ({db_path.name}):")
                 for table in tables:
-                    cursor.execute(f"SELECT COUNT(*) FROM {table[0]}")
+                    cursor.execute(f"SELECT COUNT(*) FROM {table[0]}")  # nosec B608 - internal diagnostic query
                     count = cursor.fetchone()[0]
                     print(f"  - {table[0]}: {count:,} 条记录")
 

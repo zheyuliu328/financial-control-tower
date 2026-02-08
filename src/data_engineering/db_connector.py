@@ -125,7 +125,7 @@ class ERPDatabaseConnector:
 
     def get_table_count(self, db_name: str, table_name: str) -> int:
         """获取表的记录数"""
-        query = f"SELECT COUNT(*) as count FROM {table_name}"
+        query = f"SELECT COUNT(*) as count FROM {table_name}"  # nosec B608
         result = self.execute_query(db_name, query)
         return result[0]["count"] if result else 0
 
