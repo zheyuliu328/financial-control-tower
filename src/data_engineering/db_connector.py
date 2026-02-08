@@ -31,11 +31,7 @@ class ERPDatabaseConnector:
         Args:
             db_name: 'operations', 'finance', 或 'audit'
         """
-        db_map = {
-            'operations': self.ops_db,
-            'finance': self.finance_db,
-            'audit': self.audit_db
-        }
+        db_map = {"operations": self.ops_db, "finance": self.finance_db, "audit": self.audit_db}
 
         if db_name not in db_map:
             raise ValueError(f"未知的数据库: {db_name}. 可选: {list(db_map.keys())}")
@@ -43,8 +39,7 @@ class ERPDatabaseConnector:
         db_path = db_map[db_name]
         if not db_path.exists():
             raise FileNotFoundError(
-                f"数据库不存在: {db_path}\n"
-                f"请先运行: python src/data_engineering/init_erp_databases.py"
+                f"数据库不存在: {db_path}\n请先运行: python src/data_engineering/init_erp_databases.py"
             )
 
         conn = sqlite3.connect(db_path)
@@ -96,8 +91,9 @@ class ERPDatabaseConnector:
             else:
                 return pd.read_sql_query(query, conn)
 
-    def cross_db_query(self, query_operations: str, query_finance: str = None,
-                       query_audit: str = None) -> Dict[str, pd.DataFrame]:
+    def cross_db_query(
+        self, query_operations: str, query_finance: str = None, query_audit: str = None
+    ) -> Dict[str, pd.DataFrame]:
         """
         跨数据库查询（模拟跨系统 ETL）
 
@@ -112,13 +108,13 @@ class ERPDatabaseConnector:
         results = {}
 
         if query_operations:
-            results['operations'] = self.execute_query_df('operations', query_operations)
+            results["operations"] = self.execute_query_df("operations", query_operations)
 
         if query_finance:
-            results['finance'] = self.execute_query_df('finance', query_finance)
+            results["finance"] = self.execute_query_df("finance", query_finance)
 
         if query_audit:
-            results['audit'] = self.execute_query_df('audit', query_audit)
+            results["audit"] = self.execute_query_df("audit", query_audit)
 
         return results
 
@@ -131,19 +127,16 @@ class ERPDatabaseConnector:
         """获取表的记录数"""
         query = f"SELECT COUNT(*) as count FROM {table_name}"
         result = self.execute_query(db_name, query)
-        return result[0]['count'] if result else 0
+        return result[0]["count"] if result else 0
 
     def list_tables(self, db_name: str) -> List[str]:
         """列出数据库中的所有表"""
         query = "SELECT name FROM sqlite_master WHERE type='table'"
         results = self.execute_query(db_name, query)
-        return [row['name'] for row in results]
+        return [row["name"] for row in results]
 
 
 # 便捷函数
 def get_db_connector(data_dir: Path = None) -> ERPDatabaseConnector:
     """获取数据库连接器实例"""
     return ERPDatabaseConnector(data_dir)
-
-
-

@@ -34,8 +34,7 @@ dependencies = [
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
-    "black>=22.0.0",
-    "ruff>=0.0.200",
+    "ruff>=0.1.0",
 ]
 
 [project.scripts]
@@ -48,10 +47,6 @@ Repository = "https://github.com/zheyuliu328/financial-control-tower"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/financial_control_tower"]
-
-[tool.black]
-line-length = 100
-target-version = ['py39']
 
 [tool.ruff]
 line-length = 120

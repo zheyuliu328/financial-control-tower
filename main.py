@@ -23,31 +23,31 @@ def run_sample_mode():
     import pandas as pd
 
     # Create demo databases
-    data_dir = project_root / 'data'
+    data_dir = project_root / "data"
     data_dir.mkdir(exist_ok=True)
 
     # Create sample operations database
-    conn_ops = sqlite3.connect(data_dir / 'db_operations.db')
-    df_ops = pd.read_csv(project_root / 'data' / 'sample' / 'operations_sample.csv')
-    df_ops.to_sql('sales_orders', conn_ops, if_exists='replace', index=False)
+    conn_ops = sqlite3.connect(data_dir / "db_operations.db")
+    df_ops = pd.read_csv(project_root / "data" / "sample" / "operations_sample.csv")
+    df_ops.to_sql("sales_orders", conn_ops, if_exists="replace", index=False)
     conn_ops.close()
 
     # Create sample finance database
-    conn_fin = sqlite3.connect(data_dir / 'db_finance.db')
-    df_fin = pd.read_csv(project_root / 'data' / 'sample' / 'finance_sample.csv')
-    df_fin.to_sql('order_revenue', conn_fin, if_exists='replace', index=False)
+    conn_fin = sqlite3.connect(data_dir / "db_finance.db")
+    df_fin = pd.read_csv(project_root / "data" / "sample" / "finance_sample.csv")
+    df_fin.to_sql("order_revenue", conn_fin, if_exists="replace", index=False)
     conn_fin.close()
 
     # Create audit database
-    conn_audit = sqlite3.connect(data_dir / 'audit.db')
-    conn_audit.execute('''
+    conn_audit = sqlite3.connect(data_dir / "audit.db")
+    conn_audit.execute("""
         CREATE TABLE IF NOT EXISTS audit_logs (
             id INTEGER PRIMARY KEY,
             timestamp TEXT,
             severity TEXT,
             description TEXT
         )
-    ''')
+    """)
     conn_audit.commit()
     conn_audit.close()
 
@@ -56,8 +56,8 @@ def run_sample_mode():
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Financial Control Tower')
-    parser.add_argument('--sample', action='store_true', help='Use sample data (demo mode)')
+    parser = argparse.ArgumentParser(description="Financial Control Tower")
+    parser.add_argument("--sample", action="store_true", help="Use sample data (demo mode)")
     args = parser.parse_args()
 
     print("=" * 70)
@@ -65,7 +65,7 @@ def main():
     print("=" * 70)
 
     print("\n[Step 1] 检查环境...")
-    db_path = project_root / 'data' / 'db_operations.db'
+    db_path = project_root / "data" / "db_operations.db"
 
     if args.sample:
         run_sample_mode()
@@ -95,6 +95,7 @@ def main():
     except Exception as e:
         print(f"\n❌ 执行失败: {e}")
         import traceback
+
         traceback.print_exc()
 
 

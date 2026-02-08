@@ -226,7 +226,7 @@ def save_er_diagram():
 
     # 保存 Mermaid 格式
     mermaid_file = output_dir / "ER_DIAGRAM.md"
-    with open(mermaid_file, 'w', encoding='utf-8') as f:
+    with open(mermaid_file, "w", encoding="utf-8") as f:
         f.write("# 数据库 ER 关系图\n\n")
         f.write(generate_mermaid_er_diagram())
         f.write("\n\n")
@@ -239,6 +239,3 @@ def save_er_diagram():
 
 if __name__ == "__main__":
     save_er_diagram()
-
-
-

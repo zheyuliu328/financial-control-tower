@@ -22,27 +22,20 @@ class FinancialControlTower:
 
     def __init__(self):
         # 定义数据库路径
-        base_dir = Path(__file__).parent.parent.parent / 'data'
-        self.db_ops = base_dir / 'db_operations.db'
-        self.db_fin = base_dir / 'db_finance.db'
-        self.db_audit = base_dir / 'audit.db'
+        base_dir = Path(__file__).parent.parent.parent / "data"
+        self.db_ops = base_dir / "db_operations.db"
+        self.db_fin = base_dir / "db_finance.db"
+        self.db_audit = base_dir / "audit.db"
 
         # 验证数据库存在
         if not self.db_ops.exists():
             raise FileNotFoundError(
-                f"Operations 数据库不存在: {self.db_ops}\n"
-                "请先运行: python scripts/setup_project.py"
+                f"Operations 数据库不存在: {self.db_ops}\n请先运行: python scripts/setup_project.py"
             )
         if not self.db_fin.exists():
-            raise FileNotFoundError(
-                f"Finance 数据库不存在: {self.db_fin}\n"
-                "请先运行: python scripts/setup_project.py"
-            )
+            raise FileNotFoundError(f"Finance 数据库不存在: {self.db_fin}\n请先运行: python scripts/setup_project.py")
         if not self.db_audit.exists():
-            raise FileNotFoundError(
-                f"Audit 数据库不存在: {self.db_audit}\n"
-                "请先运行: python scripts/setup_project.py"
-            )
+            raise FileNotFoundError(f"Audit 数据库不存在: {self.db_audit}\n请先运行: python scripts/setup_project.py")
 
     def _get_conn(self, db_path):
         """获取数据库连接"""
@@ -107,15 +100,15 @@ class FinancialControlTower:
 
         # 3. 对账逻辑 (Python Merge 模拟 SQL Full Outer Join)
         # 在真实 SQL 中可以是: SELECT ... FROM Ops LEFT JOIN Fin ON ... WHERE Fin.id IS NULL
-        df_recon = pd.merge(df_ops, df_fin, on='order_id', how='left', indicator=True)
+        df_recon = pd.merge(df_ops, df_fin, on="order_id", how="left", indicator=True)
 
         # 4. 发现差异
         # Case A: 业务发货了，财务没记账 (漏记收入 - 严重风险)
-        missing_in_fin = df_recon[df_recon['_merge'] == 'left_only']
+        missing_in_fin = df_recon[df_recon["_merge"] == "left_only"]
 
         # Case B: 金额不一致 (处理浮点数精度问题)
-        df_recon['diff'] = (df_recon['expected_revenue'] - df_recon['booked_revenue']).abs()
-        amount_mismatch = df_recon[(df_recon['_merge'] == 'both') & (df_recon['diff'] > 0.01)]
+        df_recon["diff"] = (df_recon["expected_revenue"] - df_recon["booked_revenue"]).abs()
+        amount_mismatch = df_recon[(df_recon["_merge"] == "both") & (df_recon["diff"] > 0.01)]
 
         print("\n📊 对账结果：")
         print(f"   -> 业务侧订单数: {len(df_ops):,}")
@@ -132,10 +125,7 @@ class FinancialControlTower:
                 print(f"      - Order {row['order_id']}: ${row['expected_revenue']:.2f} | {row['customer_name']}")
 
             self._log_audit_issue(
-                missing_in_fin['order_id'],
-                'RECON_MISSING_AR',
-                'HIGH',
-                'Order shipped but not booked in AR'
+                missing_in_fin["order_id"], "RECON_MISSING_AR", "HIGH", "Order shipped but not booked in AR"
             )
         else:
             print("\n   ✅ 收入确认完整性核对通过 (Completeness Check Passed)")
@@ -147,13 +137,12 @@ class FinancialControlTower:
             # 显示前5个案例
             print("\n   示例案例 (前5笔):")
             for _idx, row in amount_mismatch.head(5).iterrows():
-                print(f"      - Order {row['order_id']}: 业务${row['expected_revenue']:.2f} vs 财务${row['booked_revenue']:.2f} (差异${row['diff']:.2f})")
+                print(
+                    f"      - Order {row['order_id']}: 业务${row['expected_revenue']:.2f} vs 财务${row['booked_revenue']:.2f} (差异${row['diff']:.2f})"
+                )
 
             self._log_audit_issue(
-                amount_mismatch['order_id'],
-                'RECON_AMOUNT_MISMATCH',
-                'MEDIUM',
-                'Sales amount differs from AR amount'
+                amount_mismatch["order_id"], "RECON_AMOUNT_MISMATCH", "MEDIUM", "Sales amount differs from AR amount"
             )
         else:
             print("\n   ✅ 金额准确性核对通过 (Accuracy Check Passed)")
@@ -198,14 +187,14 @@ class FinancialControlTower:
         df = pd.read_sql(query, conn_ops)
 
         # 转换日期
-        df['order_date'] = pd.to_datetime(df['order_date'], errors='coerce')
-        df['shipping_date'] = pd.to_datetime(df['shipping_date'], errors='coerce')
+        df["order_date"] = pd.to_datetime(df["order_date"], errors="coerce")
+        df["shipping_date"] = pd.to_datetime(df["shipping_date"], errors="coerce")
 
         print(f"\n📊 审计范围: {len(df):,} 笔订单")
 
         # Rule 1: 时间欺诈 (发货早于订单)
         # 这在真实世界意味着：先货后票(合规风险) 或者 虚假订单补录
-        timing_fraud = df[df['shipping_date'] < df['order_date']]
+        timing_fraud = df[df["shipping_date"] < df["order_date"]]
         if not timing_fraud.empty:
             print(f"\n   ⚠️  检测到 {len(timing_fraud)} 笔'时间倒流'交易 (Timing Fraud)")
             print("   风险级别: CRITICAL - 发货日期早于订单日期")
@@ -214,41 +203,37 @@ class FinancialControlTower:
             # 显示案例
             print("\n   示例案例 (前3笔):")
             for _idx, row in timing_fraud.head(3).iterrows():
-                days_diff = (row['order_date'] - row['shipping_date']).days
-                print(f"      - Order {row['order_id']}: 订单日期 {row['order_date'].date()} | 发货日期 {row['shipping_date'].date()} (提前{days_diff}天)")
+                days_diff = (row["order_date"] - row["shipping_date"]).days
+                print(
+                    f"      - Order {row['order_id']}: 订单日期 {row['order_date'].date()} | 发货日期 {row['shipping_date'].date()} (提前{days_diff}天)"
+                )
 
-            self._log_audit_issue(
-                timing_fraud['order_id'],
-                'SC_TIMING_FRAUD',
-                'CRITICAL',
-                'Shipping Date < Order Date'
-            )
+            self._log_audit_issue(timing_fraud["order_id"], "SC_TIMING_FRAUD", "CRITICAL", "Shipping Date < Order Date")
         else:
             print("\n   ✅ 时间逻辑核对通过 (No Timing Anomalies)")
 
         # Rule 2: 负毛利交易 (Negative Margin)
         # 可能是销售录入错误，或者是倾销
-        negative_margin = df[df['profit'] < 0]
+        negative_margin = df[df["profit"] < 0]
         if not negative_margin.empty:
             print(f"\n   ⚠️  检测到 {len(negative_margin)} 笔负毛利交易 (Negative Margin)")
             print("   风险级别: MEDIUM - 利润为负的正常订单")
             print("   业务含义: 亏本销售 / 促销活动 / 价格录入错误")
 
             # 统计负毛利金额
-            total_loss = negative_margin['profit'].sum()
+            total_loss = negative_margin["profit"].sum()
             print(f"   累计亏损: ${abs(total_loss):,.2f}")
 
             # 显示案例
             print("\n   示例案例 (前3笔最严重的):")
-            for _idx, row in negative_margin.nsmallest(3, 'profit').iterrows():
-                margin_pct = (row['profit'] / row['sales'] * 100) if row['sales'] > 0 else 0
-                print(f"      - Order {row['order_id']}: 销售${row['sales']:.2f} | 利润${row['profit']:.2f} | 毛利率{margin_pct:.1f}%")
+            for _idx, row in negative_margin.nsmallest(3, "profit").iterrows():
+                margin_pct = (row["profit"] / row["sales"] * 100) if row["sales"] > 0 else 0
+                print(
+                    f"      - Order {row['order_id']}: 销售${row['sales']:.2f} | 利润${row['profit']:.2f} | 毛利率{margin_pct:.1f}%"
+                )
 
             self._log_audit_issue(
-                negative_margin['order_id'],
-                'SC_NEGATIVE_MARGIN',
-                'MEDIUM',
-                'Profit < 0 on active order'
+                negative_margin["order_id"], "SC_NEGATIVE_MARGIN", "MEDIUM", "Profit < 0 on active order"
             )
         else:
             print("\n   ✅ 盈利性核对通过 (All Orders Profitable)")
@@ -290,21 +275,25 @@ class FinancialControlTower:
         df_pnl = pd.read_sql(query_pnl, conn_ops)
 
         if not df_pnl.empty:
-            df_pnl['Margin_%'] = (df_pnl['Net_Profit'] / df_pnl['Revenue'] * 100).round(2)
+            df_pnl["Margin_%"] = (df_pnl["Net_Profit"] / df_pnl["Revenue"] * 100).round(2)
 
             print("\n📈 月度损益概览 (P&L - Last 6 Months)")
             print("-" * 70)
             print(f"{'月份':<10} {'订单数':>10} {'收入 (USD)':>15} {'净利润 (USD)':>15} {'毛利率':>10}")
             print("-" * 70)
             for _, row in df_pnl.iterrows():
-                print(f"{row['Month']:<10} {int(row['Order_Count']):>10,} ${row['Revenue']:>14,.2f} ${row['Net_Profit']:>14,.2f} {row['Margin_%']:>9.2f}%")
+                print(
+                    f"{row['Month']:<10} {int(row['Order_Count']):>10,} ${row['Revenue']:>14,.2f} ${row['Net_Profit']:>14,.2f} {row['Margin_%']:>9.2f}%"
+                )
             print("-" * 70)
 
             # 汇总统计
-            total_revenue = df_pnl['Revenue'].sum()
-            total_profit = df_pnl['Net_Profit'].sum()
+            total_revenue = df_pnl["Revenue"].sum()
+            total_profit = df_pnl["Net_Profit"].sum()
             avg_margin = (total_profit / total_revenue * 100) if total_revenue > 0 else 0
-            print(f"{'总计':<10} {int(df_pnl['Order_Count'].sum()):>10,} ${total_revenue:>14,.2f} ${total_profit:>14,.2f} {avg_margin:>9.2f}%")
+            print(
+                f"{'总计':<10} {int(df_pnl['Order_Count'].sum()):>10,} ${total_revenue:>14,.2f} ${total_profit:>14,.2f} {avg_margin:>9.2f}%"
+            )
         else:
             print("\n⚠️  未找到有效的订单数据")
 
@@ -326,14 +315,16 @@ class FinancialControlTower:
         df_region = pd.read_sql(query_region, conn_ops)
 
         if not df_region.empty:
-            df_region['Margin_%'] = (df_region['Profit'] / df_region['Revenue'] * 100).round(2)
+            df_region["Margin_%"] = (df_region["Profit"] / df_region["Revenue"] * 100).round(2)
 
             print("\n🌍 Top 10 盈利地区 (Regional Performance)")
             print("-" * 70)
             print(f"{'地区':<20} {'订单数':>10} {'收入 (USD)':>15} {'利润 (USD)':>15} {'毛利率':>10}")
             print("-" * 70)
             for _, row in df_region.iterrows():
-                print(f"{row['Region']:<20} {int(row['Orders']):>10,} ${row['Revenue']:>14,.2f} ${row['Profit']:>14,.2f} {row['Margin_%']:>9.2f}%")
+                print(
+                    f"{row['Region']:<20} {int(row['Orders']):>10,} ${row['Revenue']:>14,.2f} ${row['Profit']:>14,.2f} {row['Margin_%']:>9.2f}%"
+                )
             print("-" * 70)
         else:
             print("\n⚠️  未找到有效的地区数据")
@@ -351,31 +342,35 @@ class FinancialControlTower:
         conn_audit = self._get_conn(self.db_audit)
 
         # 准备数据
-        logs = pd.DataFrame({
-            'order_id': order_ids,
-            'risk_type': risk_type,
-            'severity': severity,
-            'details': details,
-            'detected_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        })
+        logs = pd.DataFrame(
+            {
+                "order_id": order_ids,
+                "risk_type": risk_type,
+                "severity": severity,
+                "details": details,
+                "detected_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            }
+        )
 
         # 写入 audit_logs 表
         # 使用新的表结构映射
         audit_records = []
         for _, row in logs.iterrows():
-            audit_records.append({
-                'audit_type': 'Automated',
-                'source_system': 'Financial_Control_Tower',
-                'entity_type': 'Order',
-                'entity_id': str(row['order_id']),
-                'action': risk_type,
-                'notes': details,
-                'risk_level': severity,
-                'status': 'Pending'
-            })
+            audit_records.append(
+                {
+                    "audit_type": "Automated",
+                    "source_system": "Financial_Control_Tower",
+                    "entity_type": "Order",
+                    "entity_id": str(row["order_id"]),
+                    "action": risk_type,
+                    "notes": details,
+                    "risk_level": severity,
+                    "status": "Pending",
+                }
+            )
 
         df_audit = pd.DataFrame(audit_records)
-        df_audit.to_sql('audit_logs', conn_audit, if_exists='append', index=False)
+        df_audit.to_sql("audit_logs", conn_audit, if_exists="append", index=False)
 
         conn_audit.close()
         print(f"      💾 [System] 已将 {len(logs)} 条风险记录写入 Audit DB")
@@ -389,6 +384,7 @@ def main():
     except Exception as e:
         print(f"\n❌ 执行失败: {e}")
         import traceback
+
         traceback.print_exc()
 
 

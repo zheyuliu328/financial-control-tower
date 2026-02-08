@@ -37,9 +37,7 @@ class ERPDatabaseInitializer:
         """查找原始 CSV 文件"""
         csv_files = list(self.raw_data_dir.glob("*.csv"))
         if not csv_files:
-            raise FileNotFoundError(
-                "未找到 CSV 文件。请先运行: python scripts/download_data.py"
-            )
+            raise FileNotFoundError("未找到 CSV 文件。请先运行: python scripts/download_data.py")
         return csv_files[0]
 
     def load_raw_data(self) -> pd.DataFrame:
@@ -153,18 +151,18 @@ class ERPDatabaseInitializer:
 
         # 智能映射列名（处理不同的列名变体）
         product_cols = {
-            'id': ['Product ID', 'Product Card Id', 'product_id', 'ProductId'],
-            'name': ['Product Name', 'product_name', 'ProductName'],
-            'category': ['Category Name', 'category_name', 'Category', 'category'],
-            'price': ['Sales', 'sales', 'Product Price', 'price'],
-            'cost': ['Order Item Product Price', 'Cost', 'cost'],
-            'margin': ['Order Profit Per Order', 'Profit', 'profit', 'margin']
+            "id": ["Product ID", "Product Card Id", "product_id", "ProductId"],
+            "name": ["Product Name", "product_name", "ProductName"],
+            "category": ["Category Name", "category_name", "Category", "category"],
+            "price": ["Sales", "sales", "Product Price", "price"],
+            "cost": ["Order Item Product Price", "Cost", "cost"],
+            "margin": ["Order Profit Per Order", "Profit", "profit", "margin"],
         }
 
         # 查找实际存在的列
-        product_id_col = self._find_column(df, product_cols['id'])
-        product_name_col = self._find_column(df, product_cols['name'])
-        category_col = self._find_column(df, product_cols['category'])
+        product_id_col = self._find_column(df, product_cols["id"])
+        product_name_col = self._find_column(df, product_cols["name"])
+        category_col = self._find_column(df, product_cols["category"])
 
         if not product_id_col:
             print("⚠️  未找到产品ID列，跳过产品数据插入")
@@ -179,28 +177,31 @@ class ERPDatabaseInitializer:
             products_df[category_col] = None
 
         # 计算价格和成本（从订单数据聚合）
-        sales_col = self._find_column(df, product_cols['price'])
+        sales_col = self._find_column(df, product_cols["price"])
         if sales_col:
             price_df = df.groupby(product_id_col)[sales_col].mean().reset_index()
-            price_df.columns = [product_id_col, 'avg_price']
-            products_df = products_df.merge(price_df, on=product_id_col, how='left')
+            price_df.columns = [product_id_col, "avg_price"]
+            products_df = products_df.merge(price_df, on=product_id_col, how="left")
         else:
-            products_df['avg_price'] = None
+            products_df["avg_price"] = None
 
         # 插入数据
         inserted = 0
         for _, row in products_df.iterrows():
             try:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT OR REPLACE INTO products
                     (product_id, product_name, product_category, product_price)
                     VALUES (?, ?, ?, ?)
-                """, (
-                    str(row[product_id_col]),
-                    str(row[product_name_col]) if product_name_col and pd.notna(row[product_name_col]) else None,
-                    str(row[category_col]) if category_col and pd.notna(row[category_col]) else None,
-                    float(row['avg_price']) if 'avg_price' in row and pd.notna(row['avg_price']) else None
-                ))
+                """,
+                    (
+                        str(row[product_id_col]),
+                        str(row[product_name_col]) if product_name_col and pd.notna(row[product_name_col]) else None,
+                        str(row[category_col]) if category_col and pd.notna(row[category_col]) else None,
+                        float(row["avg_price"]) if "avg_price" in row and pd.notna(row["avg_price"]) else None,
+                    ),
+                )
                 inserted += 1
             except Exception as e:
                 print(f"⚠️  插入产品失败: {e}")
@@ -213,26 +214,26 @@ class ERPDatabaseInitializer:
 
         # 智能列名映射
         col_mapping = {
-            'order_id': ['Order ID', 'order_id', 'OrderId'],
-            'order_date': ['order date (DateOrders)', 'Order Date', 'order_date'],
-            'customer_id': ['Customer ID', 'customer_id', 'CustomerId'],
-            'customer_name': ['Customer Name', 'customer_name'],
-            'customer_segment': ['Customer Segment', 'customer_segment'],
-            'customer_country': ['Customer Country', 'customer_country', 'Country'],
-            'customer_city': ['Customer City', 'customer_city', 'City'],
-            'product_id': ['Product ID', 'Product Card Id', 'product_id'],
-            'product_name': ['Product Name', 'product_name'],
-            'category': ['Category Name', 'category_name', 'Category'],
-            'quantity': ['Order Item Quantity', 'Quantity', 'quantity'],
-            'sales': ['Sales', 'sales'],
-            'discount': ['Order Item Discount', 'Discount', 'discount'],
-            'profit': ['Order Profit Per Order', 'Profit', 'profit'],
-            'status': ['Order Status', 'order_status', 'OrderStatus'],
-            'priority': ['Order Priority', 'order_priority'],
-            'shipment_scheduled': ['Days for shipment (scheduled)', 'days_for_shipment_scheduled'],
-            'shipment_real': ['Days for shipment (real)', 'days_for_shipment_real'],
-            'delivery_status': ['Delivery Status', 'delivery_status'],
-            'late_delivery_risk': ['Late_delivery_risk', 'late_delivery_risk']
+            "order_id": ["Order ID", "order_id", "OrderId"],
+            "order_date": ["order date (DateOrders)", "Order Date", "order_date"],
+            "customer_id": ["Customer ID", "customer_id", "CustomerId"],
+            "customer_name": ["Customer Name", "customer_name"],
+            "customer_segment": ["Customer Segment", "customer_segment"],
+            "customer_country": ["Customer Country", "customer_country", "Country"],
+            "customer_city": ["Customer City", "customer_city", "City"],
+            "product_id": ["Product ID", "Product Card Id", "product_id"],
+            "product_name": ["Product Name", "product_name"],
+            "category": ["Category Name", "category_name", "Category"],
+            "quantity": ["Order Item Quantity", "Quantity", "quantity"],
+            "sales": ["Sales", "sales"],
+            "discount": ["Order Item Discount", "Discount", "discount"],
+            "profit": ["Order Profit Per Order", "Profit", "profit"],
+            "status": ["Order Status", "order_status", "OrderStatus"],
+            "priority": ["Order Priority", "order_priority"],
+            "shipment_scheduled": ["Days for shipment (scheduled)", "days_for_shipment_scheduled"],
+            "shipment_real": ["Days for shipment (real)", "days_for_shipment_real"],
+            "delivery_status": ["Delivery Status", "delivery_status"],
+            "late_delivery_risk": ["Late_delivery_risk", "late_delivery_risk"],
         }
 
         # 构建实际列名映射
@@ -242,7 +243,7 @@ class ERPDatabaseInitializer:
             if found:
                 actual_cols[key] = found
 
-        if 'order_id' not in actual_cols:
+        if "order_id" not in actual_cols:
             print("⚠️  未找到订单ID列，跳过订单数据插入")
             return
 
@@ -251,15 +252,15 @@ class ERPDatabaseInitializer:
         batch_size = 1000
 
         for i in range(0, len(df), batch_size):
-            batch = df.iloc[i:i+batch_size]
+            batch = df.iloc[i : i + batch_size]
             values_list = []
 
             for _, row in batch.iterrows():
                 try:
                     # 提取日期信息
                     order_date = None
-                    if 'order_date' in actual_cols:
-                        date_val = row[actual_cols['order_date']]
+                    if "order_date" in actual_cols:
+                        date_val = row[actual_cols["order_date"]]
                         if pd.notna(date_val):
                             with contextlib.suppress(BaseException):
                                 order_date = pd.to_datetime(date_val).date()
@@ -270,29 +271,49 @@ class ERPDatabaseInitializer:
                     order_day = order_date.day if order_date else None
 
                     values = (
-                        str(row[actual_cols['order_id']]),
+                        str(row[actual_cols["order_id"]]),
                         order_date,
-                        str(row[actual_cols.get('customer_id', 'order_id')]) if 'customer_id' in actual_cols else str(row[actual_cols['order_id']]),
-                        str(row[actual_cols.get('customer_name', '')]) if 'customer_name' in actual_cols else None,
-                        str(row[actual_cols.get('customer_segment', '')]) if 'customer_segment' in actual_cols else None,
-                        str(row[actual_cols.get('customer_country', '')]) if 'customer_country' in actual_cols else None,
-                        str(row[actual_cols.get('customer_city', '')]) if 'customer_city' in actual_cols else None,
-                        str(row[actual_cols.get('product_id', '')]) if 'product_id' in actual_cols else None,
-                        str(row[actual_cols.get('product_name', '')]) if 'product_name' in actual_cols else None,
-                        str(row[actual_cols.get('category', '')]) if 'category' in actual_cols else None,
-                        int(row[actual_cols.get('quantity', 0)]) if 'quantity' in actual_cols and pd.notna(row[actual_cols['quantity']]) else 0,
-                        float(row[actual_cols.get('sales', 0)]) if 'sales' in actual_cols and pd.notna(row[actual_cols['sales']]) else 0.0,
-                        float(row[actual_cols.get('discount', 0)]) if 'discount' in actual_cols and pd.notna(row[actual_cols['discount']]) else 0.0,
-                        float(row[actual_cols.get('profit', 0)]) if 'profit' in actual_cols and pd.notna(row[actual_cols['profit']]) else 0.0,
-                        str(row[actual_cols.get('status', '')]) if 'status' in actual_cols else None,
-                        str(row[actual_cols.get('priority', '')]) if 'priority' in actual_cols else None,
+                        str(row[actual_cols.get("customer_id", "order_id")])
+                        if "customer_id" in actual_cols
+                        else str(row[actual_cols["order_id"]]),
+                        str(row[actual_cols.get("customer_name", "")]) if "customer_name" in actual_cols else None,
+                        str(row[actual_cols.get("customer_segment", "")])
+                        if "customer_segment" in actual_cols
+                        else None,
+                        str(row[actual_cols.get("customer_country", "")])
+                        if "customer_country" in actual_cols
+                        else None,
+                        str(row[actual_cols.get("customer_city", "")]) if "customer_city" in actual_cols else None,
+                        str(row[actual_cols.get("product_id", "")]) if "product_id" in actual_cols else None,
+                        str(row[actual_cols.get("product_name", "")]) if "product_name" in actual_cols else None,
+                        str(row[actual_cols.get("category", "")]) if "category" in actual_cols else None,
+                        int(row[actual_cols.get("quantity", 0)])
+                        if "quantity" in actual_cols and pd.notna(row[actual_cols["quantity"]])
+                        else 0,
+                        float(row[actual_cols.get("sales", 0)])
+                        if "sales" in actual_cols and pd.notna(row[actual_cols["sales"]])
+                        else 0.0,
+                        float(row[actual_cols.get("discount", 0)])
+                        if "discount" in actual_cols and pd.notna(row[actual_cols["discount"]])
+                        else 0.0,
+                        float(row[actual_cols.get("profit", 0)])
+                        if "profit" in actual_cols and pd.notna(row[actual_cols["profit"]])
+                        else 0.0,
+                        str(row[actual_cols.get("status", "")]) if "status" in actual_cols else None,
+                        str(row[actual_cols.get("priority", "")]) if "priority" in actual_cols else None,
                         order_year,
                         order_month,
                         order_day,
-                        int(row[actual_cols.get('shipment_scheduled', 0)]) if 'shipment_scheduled' in actual_cols and pd.notna(row[actual_cols['shipment_scheduled']]) else None,
-                        int(row[actual_cols.get('shipment_real', 0)]) if 'shipment_real' in actual_cols and pd.notna(row[actual_cols['shipment_real']]) else None,
-                        str(row[actual_cols.get('delivery_status', '')]) if 'delivery_status' in actual_cols else None,
-                        int(row[actual_cols.get('late_delivery_risk', 0)]) if 'late_delivery_risk' in actual_cols and pd.notna(row[actual_cols['late_delivery_risk']]) else 0
+                        int(row[actual_cols.get("shipment_scheduled", 0)])
+                        if "shipment_scheduled" in actual_cols and pd.notna(row[actual_cols["shipment_scheduled"]])
+                        else None,
+                        int(row[actual_cols.get("shipment_real", 0)])
+                        if "shipment_real" in actual_cols and pd.notna(row[actual_cols["shipment_real"]])
+                        else None,
+                        str(row[actual_cols.get("delivery_status", "")]) if "delivery_status" in actual_cols else None,
+                        int(row[actual_cols.get("late_delivery_risk", 0)])
+                        if "late_delivery_risk" in actual_cols and pd.notna(row[actual_cols["late_delivery_risk"]])
+                        else 0,
                     )
                     values_list.append(values)
                 except Exception:
@@ -300,7 +321,8 @@ class ERPDatabaseInitializer:
 
             # 批量插入
             if values_list:
-                cursor.executemany("""
+                cursor.executemany(
+                    """
                     INSERT OR REPLACE INTO sales_orders
                     (order_id, order_date, customer_id, customer_name, customer_segment,
                      customer_country, customer_city, product_id, product_name, category_name,
@@ -308,9 +330,11 @@ class ERPDatabaseInitializer:
                      order_year, order_month, order_day, days_for_shipment_scheduled,
                      days_for_shipment_real, delivery_status, late_delivery_risk)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, values_list)
+                """,
+                    values_list,
+                )
                 inserted += len(values_list)
-                print(f"  已插入 {inserted:,} / {len(df):,} 条订单记录...", end='\r')
+                print(f"  已插入 {inserted:,} / {len(df):,} 条订单记录...", end="\r")
 
         print(f"\n✓ 插入 {inserted:,} 条销售订单记录")
 
@@ -319,9 +343,9 @@ class ERPDatabaseInitializer:
         print("\n插入 shipping_logs 数据...")
 
         # 查找相关列
-        order_id_col = self._find_column(df, ['Order ID', 'order_id', 'OrderId'])
-        shipping_mode_col = self._find_column(df, ['Shipping Mode', 'shipping_mode', 'Type'])
-        order_date_col = self._find_column(df, ['order date (DateOrders)', 'Order Date', 'order_date'])
+        order_id_col = self._find_column(df, ["Order ID", "order_id", "OrderId"])
+        shipping_mode_col = self._find_column(df, ["Shipping Mode", "shipping_mode", "Type"])
+        order_date_col = self._find_column(df, ["order date (DateOrders)", "Order Date", "order_date"])
 
         if not order_id_col:
             print("⚠️  未找到订单ID列，跳过物流日志插入")
@@ -332,7 +356,7 @@ class ERPDatabaseInitializer:
         batch_size = 1000
 
         for i in range(0, len(df), batch_size):
-            batch = df.iloc[i:i+batch_size]
+            batch = df.iloc[i : i + batch_size]
             values_list = []
 
             for _, row in batch.iterrows():
@@ -348,29 +372,36 @@ class ERPDatabaseInitializer:
                         str(row[order_id_col]),
                         str(row[shipping_mode_col]) if shipping_mode_col and pd.notna(row[shipping_mode_col]) else None,
                         order_date,
-                        int(row.get('Days for shipment (scheduled)', 0)) if pd.notna(row.get('Days for shipment (scheduled)', 0)) else None,
-                        int(row.get('Days for shipment (real)', 0)) if pd.notna(row.get('Days for shipment (real)', 0)) else None,
-                        str(row.get('Delivery Status', '')) if pd.notna(row.get('Delivery Status', '')) else None,
-                        int(row.get('Late_delivery_risk', 0)) if pd.notna(row.get('Late_delivery_risk', 0)) else 0,
-                        str(row.get('Customer Country', '')) if pd.notna(row.get('Customer Country', '')) else None,
-                        str(row.get('Customer City', '')) if pd.notna(row.get('Customer City', '')) else None,
-                        str(row.get('Market', '')) if pd.notna(row.get('Market', '')) else None,
-                        str(row.get('Region', '')) if pd.notna(row.get('Region', '')) else None
+                        int(row.get("Days for shipment (scheduled)", 0))
+                        if pd.notna(row.get("Days for shipment (scheduled)", 0))
+                        else None,
+                        int(row.get("Days for shipment (real)", 0))
+                        if pd.notna(row.get("Days for shipment (real)", 0))
+                        else None,
+                        str(row.get("Delivery Status", "")) if pd.notna(row.get("Delivery Status", "")) else None,
+                        int(row.get("Late_delivery_risk", 0)) if pd.notna(row.get("Late_delivery_risk", 0)) else 0,
+                        str(row.get("Customer Country", "")) if pd.notna(row.get("Customer Country", "")) else None,
+                        str(row.get("Customer City", "")) if pd.notna(row.get("Customer City", "")) else None,
+                        str(row.get("Market", "")) if pd.notna(row.get("Market", "")) else None,
+                        str(row.get("Region", "")) if pd.notna(row.get("Region", "")) else None,
                     )
                     values_list.append(values)
                 except Exception:
                     continue
 
             if values_list:
-                cursor.executemany("""
+                cursor.executemany(
+                    """
                     INSERT INTO shipping_logs
                     (order_id, shipping_mode, shipping_date, days_for_shipment_scheduled,
                      days_for_shipment_real, delivery_status, late_delivery_risk,
                      customer_country, customer_city, market, region)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, values_list)
+                """,
+                    values_list,
+                )
                 inserted += len(values_list)
-                print(f"  已插入 {inserted:,} / {len(df):,} 条物流记录...", end='\r')
+                print(f"  已插入 {inserted:,} / {len(df):,} 条物流记录...", end="\r")
 
         print(f"\n✓ 插入 {inserted:,} 条物流日志记录")
 
@@ -435,10 +466,10 @@ class ERPDatabaseInitializer:
         """插入总账数据（从订单数据生成）"""
         print("\n插入 general_ledger 数据...")
 
-        order_id_col = self._find_column(df, ['Order ID', 'order_id', 'OrderId'])
-        order_date_col = self._find_column(df, ['order date (DateOrders)', 'Order Date', 'order_date'])
-        sales_col = self._find_column(df, ['Sales', 'sales'])
-        profit_col = self._find_column(df, ['Order Profit Per Order', 'Profit', 'profit'])
+        order_id_col = self._find_column(df, ["Order ID", "order_id", "OrderId"])
+        order_date_col = self._find_column(df, ["order date (DateOrders)", "Order Date", "order_date"])
+        sales_col = self._find_column(df, ["Sales", "sales"])
+        profit_col = self._find_column(df, ["Order Profit Per Order", "Profit", "profit"])
 
         if not order_id_col or not sales_col:
             print("⚠️  缺少必要列，跳过总账数据插入")
@@ -448,7 +479,7 @@ class ERPDatabaseInitializer:
         batch_size = 1000
 
         for i in range(0, len(df), batch_size):
-            batch = df.iloc[i:i+batch_size]
+            batch = df.iloc[i : i + batch_size]
             values_list = []
 
             for _, row in batch.iterrows():
@@ -468,42 +499,49 @@ class ERPDatabaseInitializer:
 
                     # 创建两条总账记录：收入（贷方）和成本（借方）
                     # 收入记录
-                    values_list.append((
-                        transaction_date,
-                        order_id,
-                        '4000',  # 收入账户代码
-                        'Sales Revenue',
-                        0.0,  # 借方
-                        sales,  # 贷方
-                        f'Sales for Order {order_id}',
-                        order_id
-                    ))
+                    values_list.append(
+                        (
+                            transaction_date,
+                            order_id,
+                            "4000",  # 收入账户代码
+                            "Sales Revenue",
+                            0.0,  # 借方
+                            sales,  # 贷方
+                            f"Sales for Order {order_id}",
+                            order_id,
+                        )
+                    )
 
                     # 成本记录
                     if cost > 0:
-                        values_list.append((
-                            transaction_date,
-                            order_id,
-                            '5000',  # 成本账户代码
-                            'Cost of Goods Sold',
-                            cost,  # 借方
-                            0.0,  # 贷方
-                            f'COGS for Order {order_id}',
-                            order_id
-                        ))
+                        values_list.append(
+                            (
+                                transaction_date,
+                                order_id,
+                                "5000",  # 成本账户代码
+                                "Cost of Goods Sold",
+                                cost,  # 借方
+                                0.0,  # 贷方
+                                f"COGS for Order {order_id}",
+                                order_id,
+                            )
+                        )
 
                 except Exception:
                     continue
 
             if values_list:
-                cursor.executemany("""
+                cursor.executemany(
+                    """
                     INSERT INTO general_ledger
                     (transaction_date, order_id, account_code, account_name,
                      debit_amount, credit_amount, description, reference_number)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """, values_list)
+                """,
+                    values_list,
+                )
                 inserted += len(values_list)
-                print(f"  已插入 {inserted:,} 条总账记录...", end='\r')
+                print(f"  已插入 {inserted:,} 条总账记录...", end="\r")
 
         print(f"\n✓ 插入 {inserted:,} 条总账记录")
 
@@ -511,12 +549,12 @@ class ERPDatabaseInitializer:
         """插入应收账款数据"""
         print("\n插入 accounts_receivable 数据...")
 
-        order_id_col = self._find_column(df, ['Order ID', 'order_id', 'OrderId'])
-        order_date_col = self._find_column(df, ['order date (DateOrders)', 'Order Date', 'order_date'])
-        sales_col = self._find_column(df, ['Sales', 'sales'])
-        customer_id_col = self._find_column(df, ['Customer ID', 'customer_id', 'CustomerId'])
-        customer_name_col = self._find_column(df, ['Customer Name', 'customer_name'])
-        order_status_col = self._find_column(df, ['Order Status', 'order_status', 'OrderStatus'])
+        order_id_col = self._find_column(df, ["Order ID", "order_id", "OrderId"])
+        order_date_col = self._find_column(df, ["order date (DateOrders)", "Order Date", "order_date"])
+        sales_col = self._find_column(df, ["Sales", "sales"])
+        customer_id_col = self._find_column(df, ["Customer ID", "customer_id", "CustomerId"])
+        customer_name_col = self._find_column(df, ["Customer Name", "customer_name"])
+        order_status_col = self._find_column(df, ["Order Status", "order_status", "OrderStatus"])
 
         if not order_id_col or not sales_col:
             print("⚠️  缺少必要列，跳过应收账款数据插入")
@@ -526,7 +564,7 @@ class ERPDatabaseInitializer:
         batch_size = 1000
 
         for i in range(0, len(df), batch_size):
-            batch = df.iloc[i:i+batch_size]
+            batch = df.iloc[i : i + batch_size]
             values_list = []
 
             for _, row in batch.iterrows():
@@ -542,24 +580,29 @@ class ERPDatabaseInitializer:
                     due_date = None
                     if invoice_date:
                         from datetime import timedelta
+
                         due_date = invoice_date + timedelta(days=30)
 
                     invoice_amount = float(row[sales_col]) if pd.notna(row[sales_col]) else 0.0
-                    order_status = str(row[order_status_col]) if order_status_col and pd.notna(row[order_status_col]) else 'Unknown'
+                    order_status = (
+                        str(row[order_status_col])
+                        if order_status_col and pd.notna(row[order_status_col])
+                        else "Unknown"
+                    )
 
                     # 根据订单状态判断支付状态
-                    if 'Complete' in order_status or 'Completed' in order_status:
+                    if "Complete" in order_status or "Completed" in order_status:
                         paid_amount = invoice_amount
                         outstanding_amount = 0.0
-                        payment_status = 'Paid'
-                    elif 'Cancel' in order_status or 'Cancelled' in order_status:
+                        payment_status = "Paid"
+                    elif "Cancel" in order_status or "Cancelled" in order_status:
                         paid_amount = 0.0
                         outstanding_amount = 0.0
-                        payment_status = 'Cancelled'
+                        payment_status = "Cancelled"
                     else:
                         paid_amount = 0.0
                         outstanding_amount = invoice_amount
-                        payment_status = 'Outstanding'
+                        payment_status = "Outstanding"
 
                     values = (
                         str(row[order_id_col]),
@@ -571,21 +614,24 @@ class ERPDatabaseInitializer:
                         paid_amount,
                         outstanding_amount,
                         payment_status,
-                        0  # days_past_due
+                        0,  # days_past_due
                     )
                     values_list.append(values)
                 except Exception:
                     continue
 
             if values_list:
-                cursor.executemany("""
+                cursor.executemany(
+                    """
                     INSERT OR REPLACE INTO accounts_receivable
                     (order_id, customer_id, customer_name, invoice_date, due_date,
                      invoice_amount, paid_amount, outstanding_amount, payment_status, days_past_due)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, values_list)
+                """,
+                    values_list,
+                )
                 inserted += len(values_list)
-                print(f"  已插入 {inserted:,} 条应收账款记录...", end='\r')
+                print(f"  已插入 {inserted:,} 条应收账款记录...", end="\r")
 
         print(f"\n✓ 插入 {inserted:,} 条应收账款记录")
 
@@ -667,11 +713,7 @@ class ERPDatabaseInitializer:
         print("验证数据库")
         print("=" * 60)
 
-        databases = [
-            (self.ops_db_path, "Operations"),
-            (self.finance_db_path, "Finance"),
-            (self.audit_db_path, "Audit")
-        ]
+        databases = [(self.ops_db_path, "Operations"), (self.finance_db_path, "Finance"), (self.audit_db_path, "Audit")]
 
         for db_path, db_name in databases:
             if db_path.exists():
@@ -732,4 +774,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

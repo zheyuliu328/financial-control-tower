@@ -10,6 +10,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+
 def download_with_kagglehub():
     """使用 kagglehub 库下载数据并搬运到项目目录"""
     try:
@@ -74,8 +75,10 @@ def download_with_kagglehub():
     except Exception as e:
         print(f"使用 kagglehub 下载失败: {e}")
         import traceback
+
         traceback.print_exc()
         return False
+
 
 def download_with_opendatasets():
     """使用 opendatasets 库下载数据"""
@@ -109,6 +112,7 @@ def download_with_opendatasets():
         print(f"3. 放置到 {target_dir} 目录")
         return False
 
+
 def check_data_exists():
     """检查数据是否已存在"""
     data_dir = project_root / "data" / "raw"
@@ -118,6 +122,7 @@ def check_data_exists():
         print(f"✓ 数据文件已存在: {csv_files[0]}")
         return True
     return False
+
 
 def main():
     """主函数"""
@@ -129,7 +134,7 @@ def main():
     # 检查数据是否已存在
     if check_data_exists():
         response = input("数据文件已存在，是否重新下载？(y/n): ")
-        if response.lower() != 'y':
+        if response.lower() != "y":
             print("跳过下载")
             return
 
@@ -162,6 +167,6 @@ def main():
     data_dir.mkdir(parents=True, exist_ok=True)
     print(f"\n✓ 已创建目录: {data_dir}")
 
+
 if __name__ == "__main__":
     main()
-

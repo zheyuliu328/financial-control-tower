@@ -17,9 +17,9 @@ def main():
     """主函数"""
     import argparse
 
-    parser = argparse.ArgumentParser(description='运行财务控制塔审计流程')
-    parser.add_argument('--month', type=int, help='月份 (1-12)')
-    parser.add_argument('--year', type=int, help='年份 (如 2023)')
+    parser = argparse.ArgumentParser(description="运行财务控制塔审计流程")
+    parser.add_argument("--month", type=int, help="月份 (1-12)")
+    parser.add_argument("--year", type=int, help="年份 (如 2023)")
 
     args = parser.parse_args()
 
@@ -29,6 +29,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-

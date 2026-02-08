@@ -12,6 +12,7 @@ import pandas as pd
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+
 def load_raw_data():
     """加载原始数据"""
     data_dir = project_root / "data" / "raw"
@@ -26,6 +27,7 @@ def load_raw_data():
     print(f"列数: {len(df.columns)}")
 
     return df, csv_files[0].name
+
 
 def explore_data(df):
     """探索数据基本信息"""
@@ -43,16 +45,14 @@ def explore_data(df):
     print("\n缺失值统计:")
     missing = df.isnull().sum()
     missing_pct = (missing / len(df) * 100).round(2)
-    missing_df = pd.DataFrame({
-        '缺失数量': missing,
-        '缺失百分比': missing_pct
-    })
-    print(missing_df[missing_df['缺失数量'] > 0])
+    missing_df = pd.DataFrame({"缺失数量": missing, "缺失百分比": missing_pct})
+    print(missing_df[missing_df["缺失数量"] > 0])
 
     print("\n数据前5行:")
     print(df.head())
 
     return df
+
 
 def clean_data(df):
     """清洗数据"""
@@ -75,6 +75,7 @@ def clean_data(df):
 
     return df
 
+
 def save_processed_data(df, original_filename):
     """保存处理后的数据"""
     output_dir = project_root / "data" / "processed"
@@ -87,10 +88,11 @@ def save_processed_data(df, original_filename):
 
     # 保存为 Parquet（更高效）
     parquet_file = output_dir / f"processed_{original_filename.replace('.csv', '.parquet')}"
-    df.to_parquet(parquet_file, index=False, engine='pyarrow')
+    df.to_parquet(parquet_file, index=False, engine="pyarrow")
     print(f"✓ 已保存为 Parquet 格式: {parquet_file}")
 
     return output_file, parquet_file
+
 
 def main():
     """主函数"""
@@ -118,9 +120,10 @@ def main():
     except Exception as e:
         print(f"\n❌ 错误: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 
+
 if __name__ == "__main__":
     main()
-
