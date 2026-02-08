@@ -3,8 +3,8 @@
 使用 graphviz 或生成 Mermaid 格式的图表
 """
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
@@ -12,14 +12,14 @@ sys.path.insert(0, str(project_root))
 
 def generate_mermaid_er_diagram():
     """生成 Mermaid 格式的 ER 图"""
-    
+
     mermaid_code = """
 ```mermaid
 erDiagram
     %% Operations Database (db_operations.db)
     PRODUCTS ||--o{ SALES_ORDERS : "has"
     SALES_ORDERS ||--o{ SHIPPING_LOGS : "generates"
-    
+
     PRODUCTS {
         string product_id PK
         string product_name
@@ -29,7 +29,7 @@ erDiagram
         decimal product_margin
         timestamp created_at
     }
-    
+
     SALES_ORDERS {
         string order_id PK
         date order_date
@@ -56,7 +56,7 @@ erDiagram
         int late_delivery_risk
         timestamp created_at
     }
-    
+
     SHIPPING_LOGS {
         int log_id PK
         string order_id FK
@@ -72,11 +72,11 @@ erDiagram
         string region
         timestamp created_at
     }
-    
+
     %% Finance Database (db_finance.db)
     GENERAL_LEDGER ||--o{ ACCOUNTS_RECEIVABLE : "references"
     SALES_ORDERS ||--o| ACCOUNTS_RECEIVABLE : "generates"
-    
+
     GENERAL_LEDGER {
         int gl_id PK
         date transaction_date
@@ -89,7 +89,7 @@ erDiagram
         string reference_number
         timestamp created_at
     }
-    
+
     ACCOUNTS_RECEIVABLE {
         int ar_id PK
         string order_id UK
@@ -105,7 +105,7 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
-    
+
     %% Audit Database (audit.db)
     AUDIT_LOGS {
         int log_id PK
@@ -123,7 +123,7 @@ erDiagram
         string risk_level
         string status
     }
-    
+
     RISK_FLAGS {
         int flag_id PK
         timestamp flag_date
@@ -139,19 +139,19 @@ erDiagram
         timestamp resolved_at
         timestamp created_at
     }
-    
+
     %% Cross-database relationships (logical, not physical)
     SALES_ORDERS ||--o| ACCOUNTS_RECEIVABLE : "reconciles_with"
     SALES_ORDERS ||--o{ RISK_FLAGS : "flagged_by"
 ```
 """
-    
+
     return mermaid_code
 
 
 def generate_text_er_diagram():
     """生成文本格式的 ER 图说明"""
-    
+
     text = """
 # 数据库 ER 关系图
 
@@ -164,7 +164,7 @@ def generate_text_er_diagram():
 ### SALES_ORDERS (销售订单)
 - **PK**: order_id
 - **FK**: product_id → PRODUCTS
-- **关系**: 
+- **关系**:
   - N:1 → PRODUCTS
   - 1:N → SHIPPING_LOGS
   - 1:1 → ACCOUNTS_RECEIVABLE (跨库逻辑关系)
@@ -215,7 +215,7 @@ def generate_text_er_diagram():
    - 财务关系：总账分录引用订单
    - 通过 related_order_id 关联
 """
-    
+
     return text
 
 
@@ -223,7 +223,7 @@ def save_er_diagram():
     """保存 ER 图到文件"""
     output_dir = project_root / "docs"
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # 保存 Mermaid 格式
     mermaid_file = output_dir / "ER_DIAGRAM.md"
     with open(mermaid_file, 'w', encoding='utf-8') as f:
@@ -231,9 +231,9 @@ def save_er_diagram():
         f.write(generate_mermaid_er_diagram())
         f.write("\n\n")
         f.write(generate_text_er_diagram())
-    
+
     print(f"✅ ER 图已保存到: {mermaid_file}")
-    
+
     return mermaid_file
 
 

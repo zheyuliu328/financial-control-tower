@@ -27,13 +27,13 @@ def setup():
     print("=" * 70)
     print("🚀 开始项目初始化设置...")
     print("=" * 70)
-    
+
     # 1. 确保数据目录存在
     raw_dir = project_root / 'data' / 'raw'
     raw_dir.mkdir(parents=True, exist_ok=True)
-    
+
     target_path = raw_dir / 'DataCoSupplyChainDataset.csv'
-    
+
     # 2. 检查或获取数据
     if not target_path.exists():
         print("\n📥 正在通过 kagglehub 获取 DataCo 数据集...")
@@ -41,17 +41,17 @@ def setup():
             # 这会下载或获取已缓存的路径
             path = kagglehub.dataset_download("shashwatwork/dataco-smart-supply-chain-for-big-data-analysis")
             print(f"✓ 数据集已下载到: {path}")
-            
+
             # 查找 CSV 文件
             csv_file = None
-            for root, dirs, files in os.walk(path):
+            for root, _dirs, files in os.walk(path):
                 for file in files:
                     if file.endswith('.csv'):
                         csv_file = os.path.join(root, file)
                         break
                 if csv_file:
                     break
-            
+
             if csv_file:
                 print(f"📦 移动数据文件: {csv_file}")
                 print(f"   -> {target_path}")
@@ -71,7 +71,7 @@ def setup():
             return False
     else:
         print(f"\n✅ 数据文件已存在: {target_path}")
-    
+
     # 3. 初始化数据库
     print("\n" + "=" * 70)
     print("🏭 正在初始化 ERP 数据库架构...")

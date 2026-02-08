@@ -20,15 +20,15 @@ fraud_rule_metrics.py - 欺诈规则性能指标模块
 4. 所有评估结果必须记录到审计数据库
 """
 
-import sqlite3
-import pandas as pd
-import numpy as np
-from datetime import datetime, timedelta
-from pathlib import Path
-from dataclasses import dataclass
-from typing import List, Dict, Optional, Tuple
-from enum import Enum
 import json
+import sqlite3
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from enum import Enum
+from pathlib import Path
+from typing import Dict, List, Tuple
+
+import pandas as pd
 
 
 class FraudRuleType(Enum):
@@ -48,7 +48,7 @@ class FraudRuleThreshold:
     severity_levels: Dict[str, Tuple[float, float]]  # 级别 -> (最小值, 最大值)
     description: str
     enabled: bool = True
-    
+
     def get_severity(self, value: float) -> str:
         """根据值判断严重程度"""
         for level, (min_val, max_val) in self.severity_levels.items():
@@ -62,50 +62,50 @@ class RulePerformanceMetrics:
     """规则性能指标"""
     rule_type: FraudRuleType
     evaluation_period: str
-    
+
     # 基础计数
     true_positives: int = 0
     false_positives: int = 0
     true_negatives: int = 0
     false_negatives: int = 0
-    
+
     # 派生指标
     @property
     def precision(self) -> float:
         """精确率 = TP / (TP + FP)"""
         denominator = self.true_positives + self.false_positives
         return self.true_positives / denominator if denominator > 0 else 0.0
-    
+
     @property
     def recall(self) -> float:
         """召回率 = TP / (TP + FN)"""
         denominator = self.true_positives + self.false_negatives
         return self.true_positives / denominator if denominator > 0 else 0.0
-    
+
     @property
     def f1_score(self) -> float:
         """F1 Score = 2 * (Precision * Recall) / (Precision + Recall)"""
         denominator = self.precision + self.recall
         return 2 * (self.precision * self.recall) / denominator if denominator > 0 else 0.0
-    
+
     @property
     def false_positive_rate(self) -> float:
         """误报率 = FP / (FP + TN)"""
         denominator = self.false_positives + self.true_negatives
         return self.false_positives / denominator if denominator > 0 else 0.0
-    
+
     @property
     def false_negative_rate(self) -> float:
         """漏报率 = FN / (FN + TP)"""
         denominator = self.false_negatives + self.true_positives
         return self.false_negatives / denominator if denominator > 0 else 0.0
-    
+
     @property
     def accuracy(self) -> float:
         """准确率 = (TP + TN) / Total"""
         total = self.true_positives + self.false_positives + self.true_negatives + self.false_negatives
         return (self.true_positives + self.true_negatives) / total if total > 0 else 0.0
-    
+
     def to_dict(self) -> Dict:
         """转换为字典格式"""
         return {
@@ -126,7 +126,7 @@ class RulePerformanceMetrics:
 
 class FraudRuleManager:
     """欺诈规则管理器"""
-    
+
     # 生产环境标准阈值配置
     DEFAULT_THRESHOLDS = {
         FraudRuleType.TIMING_FRAUD: FraudRuleThreshold(
@@ -174,24 +174,24 @@ class FraudRuleManager:
             description="检测客户单日订单频率异常"
         ),
     }
-    
+
     def __init__(self, data_dir: Path = None):
         self.project_root = Path(__file__).parent.parent.parent
         self.data_dir = data_dir or (self.project_root / 'data')
         self.db_ops = self.data_dir / 'db_operations.db'
         self.db_fin = self.data_dir / 'db_finance.db'
         self.db_audit = self.data_dir / 'audit.db'
-        
+
         self.thresholds = self.DEFAULT_THRESHOLDS.copy()
-    
+
     def _get_conn(self, db_path: Path):
         """获取数据库连接"""
         return sqlite3.connect(str(db_path))
-    
+
     def evaluate_timing_fraud_rule(self, start_date: str = None, end_date: str = None) -> RulePerformanceMetrics:
         """
         评估时间欺诈规则的性能
-        
+
         在生产环境中，需要人工标注来确认真正的欺诈案例。
         这里使用启发式方法：
         - 发货日期早于订单日期超过7天 -> 标记为确认欺诈 (TP)
@@ -199,13 +199,13 @@ class FraudRuleManager:
         - 发货日期等于或晚于订单日期 -> 标记为正常 (TN)
         """
         conn = self._get_conn(self.db_ops)
-        
+
         date_filter = ""
         if start_date and end_date:
             date_filter = f"WHERE t1.order_date BETWEEN '{start_date}' AND '{end_date}'"
-        
+
         query = f"""
-        SELECT 
+        SELECT
             t1.order_id,
             t1.order_date,
             t2.shipping_date,
@@ -217,36 +217,36 @@ class FraudRuleManager:
         {date_filter}
         AND t1.order_status NOT IN ('CANCELED', 'CANCELLED', 'SUSPECTED_FRAUD')
         """
-        
+
         df = pd.read_sql(query, conn)
         conn.close()
-        
+
         if df.empty:
             return RulePerformanceMetrics(
                 rule_type=FraudRuleType.TIMING_FRAUD,
                 evaluation_period=f"{start_date} to {end_date}"
             )
-        
+
         # 转换日期
         df['order_date'] = pd.to_datetime(df['order_date'], errors='coerce')
         df['shipping_date'] = pd.to_datetime(df['shipping_date'], errors='coerce')
         df['actual_day_diff'] = (df['shipping_date'] - df['order_date']).dt.days
-        
+
         # 规则触发条件：发货早于订单 (day_diff < 0)
         df['rule_triggered'] = df['actual_day_diff'] < 0
-        
+
         # 启发式标注（生产环境应使用人工标注）
         # 发货早于订单超过7天 -> 高置信度欺诈
         # 发货早于订单1-7天 -> 中等置信度
         # 发货日期等于或晚于订单 -> 正常
         df['is_fraud'] = df['actual_day_diff'] < -7  # 启发式：超过7天认为是确认欺诈
-        
+
         # 计算混淆矩阵
-        tp = len(df[(df['rule_triggered'] == True) & (df['is_fraud'] == True)])
-        fp = len(df[(df['rule_triggered'] == True) & (df['is_fraud'] == False)])
-        tn = len(df[(df['rule_triggered'] == False) & (df['is_fraud'] == False)])
-        fn = len(df[(df['rule_triggered'] == False) & (df['is_fraud'] == True)])
-        
+        tp = len(df[(df['rule_triggered']) & (df['is_fraud'])])
+        fp = len(df[(df['rule_triggered']) & (not df['is_fraud'])])
+        tn = len(df[(not df['rule_triggered']) & (not df['is_fraud'])])
+        fn = len(df[(not df['rule_triggered']) & (df['is_fraud'])])
+
         return RulePerformanceMetrics(
             rule_type=FraudRuleType.TIMING_FRAUD,
             evaluation_period=f"{start_date} to {end_date}",
@@ -255,24 +255,24 @@ class FraudRuleManager:
             true_negatives=tn,
             false_negatives=fn
         )
-    
+
     def evaluate_negative_margin_rule(self, start_date: str = None, end_date: str = None) -> RulePerformanceMetrics:
         """
         评估负毛利规则的性能
-        
+
         启发式标注：
         - 负毛利且金额 > $1000 -> 高置信度问题 (TP)
         - 负毛利但金额 <= $1000 -> 可能是促销或错误
         - 正毛利 -> 正常 (TN)
         """
         conn = self._get_conn(self.db_ops)
-        
+
         date_filter = ""
         if start_date and end_date:
             date_filter = f"WHERE order_date BETWEEN '{start_date}' AND '{end_date}'"
-        
+
         query = f"""
-        SELECT 
+        SELECT
             order_id,
             profit,
             sales,
@@ -281,27 +281,27 @@ class FraudRuleManager:
         {date_filter}
         AND order_status NOT IN ('CANCELED', 'CANCELLED', 'SUSPECTED_FRAUD')
         """
-        
+
         df = pd.read_sql(query, conn)
         conn.close()
-        
+
         if df.empty:
             return RulePerformanceMetrics(
                 rule_type=FraudRuleType.NEGATIVE_MARGIN,
                 evaluation_period=f"{start_date} to {end_date}"
             )
-        
+
         # 规则触发条件：利润 < 0
         df['rule_triggered'] = df['profit'] < 0
-        
+
         # 启发式标注：负毛利且金额 > $1000 认为是确认问题
         df['is_fraud'] = (df['profit'] < -1000)
-        
-        tp = len(df[(df['rule_triggered'] == True) & (df['is_fraud'] == True)])
-        fp = len(df[(df['rule_triggered'] == True) & (df['is_fraud'] == False)])
-        tn = len(df[(df['rule_triggered'] == False) & (df['is_fraud'] == False)])
-        fn = len(df[(df['rule_triggered'] == False) & (df['is_fraud'] == True)])
-        
+
+        tp = len(df[(df['rule_triggered']) & (df['is_fraud'])])
+        fp = len(df[(df['rule_triggered']) & (not df['is_fraud'])])
+        tn = len(df[(not df['rule_triggered']) & (not df['is_fraud'])])
+        fn = len(df[(not df['rule_triggered']) & (df['is_fraud'])])
+
         return RulePerformanceMetrics(
             rule_type=FraudRuleType.NEGATIVE_MARGIN,
             evaluation_period=f"{start_date} to {end_date}",
@@ -310,30 +310,30 @@ class FraudRuleManager:
             true_negatives=tn,
             false_negatives=fn
         )
-    
+
     def evaluate_all_rules(self, start_date: str = None, end_date: str = None) -> List[RulePerformanceMetrics]:
         """评估所有启用的规则"""
         results = []
-        
+
         for rule_type, threshold in self.thresholds.items():
             if not threshold.enabled:
                 continue
-            
+
             if rule_type == FraudRuleType.TIMING_FRAUD:
                 metrics = self.evaluate_timing_fraud_rule(start_date, end_date)
             elif rule_type == FraudRuleType.NEGATIVE_MARGIN:
                 metrics = self.evaluate_negative_margin_rule(start_date, end_date)
             else:
                 continue  # 其他规则暂未实现
-            
+
             results.append(metrics)
-        
+
         return results
-    
+
     def save_metrics_to_audit_db(self, metrics: RulePerformanceMetrics):
         """保存指标到审计数据库"""
         conn = self._get_conn(self.db_audit)
-        
+
         cursor = conn.cursor()
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS fraud_rule_metrics (
@@ -355,10 +355,10 @@ class FraudRuleManager:
                 notes TEXT
             )
         """)
-        
+
         data = metrics.to_dict()
         cursor.execute("""
-            INSERT INTO fraud_rule_metrics 
+            INSERT INTO fraud_rule_metrics
             (evaluation_date, rule_type, evaluation_period, true_positives, false_positives,
              true_negatives, false_negatives, precision, recall, f1_score,
              false_positive_rate, false_negative_rate, accuracy, threshold_config)
@@ -379,10 +379,10 @@ class FraudRuleManager:
             data['accuracy'],
             json.dumps(self.thresholds[data['rule_type']].__dict__, default=str) if data['rule_type'] in self.thresholds else None
         ))
-        
+
         conn.commit()
         conn.close()
-    
+
     def generate_performance_report(self, metrics_list: List[RulePerformanceMetrics]) -> str:
         """生成性能报告"""
         report_lines = [
@@ -392,19 +392,19 @@ class FraudRuleManager:
             "=" * 80,
             ""
         ]
-        
+
         for metrics in metrics_list:
             report_lines.extend([
                 f"\n规则类型: {metrics.rule_type.value}",
                 f"评估周期: {metrics.evaluation_period}",
                 "-" * 80,
-                f"  基础计数:",
+                "  基础计数:",
                 f"    - 真阳性 (TP): {metrics.true_positives:,}",
                 f"    - 假阳性 (FP): {metrics.false_positives:,}",
                 f"    - 真阴性 (TN): {metrics.true_negatives:,}",
                 f"    - 假阴性 (FN): {metrics.false_negatives:,}",
-                f"",
-                f"  性能指标:",
+                "",
+                "  性能指标:",
                 f"    - 精确率 (Precision): {metrics.precision:.2%}",
                 f"    - 召回率 (Recall): {metrics.recall:.2%}",
                 f"    - F1 Score: {metrics.f1_score:.4f}",
@@ -413,13 +413,13 @@ class FraudRuleManager:
                 f"    - 准确率 (Accuracy): {metrics.accuracy:.2%}",
                 ""
             ])
-            
+
             # 生产环境告警
             if metrics.false_positive_rate > 0.05:
-                report_lines.append(f"  ⚠️  WARNING: 误报率超过5%，建议优化规则阈值")
+                report_lines.append("  ⚠️  WARNING: 误报率超过5%，建议优化规则阈值")
             if metrics.recall < 0.8:
-                report_lines.append(f"  ⚠️  WARNING: 召回率低于80%，可能漏检欺诈案例")
-        
+                report_lines.append("  ⚠️  WARNING: 召回率低于80%，可能漏检欺诈案例")
+
         report_lines.append("=" * 80)
         return "\n".join(report_lines)
 
@@ -429,28 +429,28 @@ def main():
     print("=" * 80)
     print("Fraud Rule Metrics Evaluation - 欺诈规则性能评估")
     print("=" * 80)
-    
+
     manager = FraudRuleManager()
-    
+
     # 评估最近30天的规则性能
     end_date = datetime.now().strftime('%Y-%m-%d')
     start_date = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
-    
+
     print(f"\n评估周期: {start_date} 至 {end_date}\n")
-    
+
     # 评估所有规则
     metrics_list = manager.evaluate_all_rules(start_date, end_date)
-    
+
     # 生成并打印报告
     report = manager.generate_performance_report(metrics_list)
     print(report)
-    
+
     # 保存到审计数据库
     for metrics in metrics_list:
         manager.save_metrics_to_audit_db(metrics)
-    
-    print(f"\n✅ 性能指标已保存到 audit.db 的 fraud_rule_metrics 表")
-    
+
+    print("\n✅ 性能指标已保存到 audit.db 的 fraud_rule_metrics 表")
+
     return metrics_list
 
 
