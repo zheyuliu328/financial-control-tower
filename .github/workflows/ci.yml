@@ -21,7 +21,7 @@ jobs:
         pip install ruff
         pip install -r requirements.txt
     - name: Lint with ruff
-      run: ruff check . --fix || true
+      run: ruff check . --fix
 
   test:
     runs-on: ubuntu-latest
