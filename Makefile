@@ -50,7 +50,7 @@ run-real: ## Run with real data (usage: make run-real CSV=path/to/erp.csv)
 	python scripts/run_real.py $(CSV) --output artifacts
 
 verify: ## Run full verification suite
-	@bash ../scripts/verify.sh
+	@bash scripts/verify.sh
 
 docker-build: ## Build Docker image
 	docker build -t $(shell basename $(PWD)):latest .
