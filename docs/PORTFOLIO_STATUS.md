@@ -21,8 +21,6 @@ The repair uses a temporary build/test environment and retains source CSVs, data
 
 Remote CI is a separate gate: see [Actions](https://github.com/zheyuliu328/financial-control-tower/actions). Do not infer it passed from this document or a local command. Required contexts include lint, substantive tests, installed-wheel e2e, security verification and Gitleaks. The historical main run at `d1030a33` failed formatting and skipped downstream tests; it does not describe the repaired implementation's eventual CI result.
 
-## Boundaries retained
-
 Local revalidation on 2026-09-08 completed **37 tests**, Ruff/format, Bandit, dependency consistency,
 normal wheel installation and a complete installed CLI run outside the checkout. An independent
 review added **11 counterexample checks**, including missing-region reconciliation, null/valid ID
@@ -30,6 +28,8 @@ separation, strict dates, WAL/journal and linked-file input protection, and 341 
 The source files are unchanged on those failure paths. The main review repeated the full local
 verifier in a separate Python 3.12 environment; the 10 original tracked data/artifact files remained
 byte-identical. These local results are separate from the revision-specific remote gates above.
+
+## Boundaries retained
 
 - Ordinary SQLite logs are mutable; the test demonstrates this rather than claiming immutability.
 - No SAP/Oracle connector, RBAC, hash chain, signature, encrypted storage or regulatory certification is implemented.
