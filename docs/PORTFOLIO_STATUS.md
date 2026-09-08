@@ -21,13 +21,21 @@ The repair uses a temporary build/test environment and retains source CSVs, data
 
 Remote CI is a separate gate: see [Actions](https://github.com/zheyuliu328/financial-control-tower/actions). Do not infer it passed from this document or a local command. Required contexts include lint, substantive tests, installed-wheel e2e, security verification and Gitleaks. The historical main run at `d1030a33` failed formatting and skipped downstream tests; it does not describe the repaired implementation's eventual CI result.
 
-Local revalidation on 2026-09-08 completed **37 tests**, Ruff/format, Bandit, dependency consistency,
+The earlier SQLite audit-workflow revalidation on 2026-09-08 completed **37 tests**, Ruff/format, Bandit, dependency consistency,
 normal wheel installation and a complete installed CLI run outside the checkout. An independent
 review added **11 counterexample checks**, including missing-region reconciliation, null/valid ID
 separation, strict dates, WAL/journal and linked-file input protection, and 341 label-matrix cases.
 The source files are unchanged on those failure paths. The main review repeated the full local
 verifier in a separate Python 3.12 environment; the 10 original tracked data/artifact files remained
 byte-identical. These local results are separate from the revision-specific remote gates above.
+
+## New table-comparison entry point — 2026-09-08
+
+The separate `fct-compare` CLI accepts two CSV or value-only `.xlsx` tables with explicit composite-key and numeric-column mappings, Excel sheet/header selection, currency columns or a declared common unit, and absolute/relative tolerances. It retains every nonempty source row, blocks duplicate/missing keys, invalid values, formulas and currency disagreement, and publishes a static HTML report, CSV, exact JSON and source/file manifest into a new directory. This is a technical comparison, not accounting approval or financial-model validation. The existing SQLite engine and rule semantics are unchanged. See the [table-comparison guide](table-comparison.md).
+
+The completed local verification now comprises **97 tests: the earlier 37 plus 60 table-comparison tests, with zero skips**, on macOS/Python 3.12.14. Ruff, format checks, Bandit, dependency consistency and the existing installed audit CLI also passed. A normal wheel installation exercised `fct-compare` outside the checkout. Eight damaged-Excel cases confirm exit 2, no published directory and unchanged input hashes, including missing OOXML parts, malformed XML, invalid shared-string references and invalid workbook field types. CI test, compatibility and verification jobs explicitly install `.[dev,excel]`; the separate wheel CSV smoke remains available without Excel dependencies. These are local checks and workflow requirements, not evidence of a future remote run.
+
+The delivered interaction is a CLI. GUI field selection is not implemented, and an observed trial by a second analyst has not yet been performed. The static report has been designed for direct file opening; those remaining usability questions must not be inferred from test counts.
 
 ## Boundaries retained
 
