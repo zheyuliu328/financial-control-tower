@@ -11,4 +11,9 @@ Required remote contexts are `lint`, `test`, `e2e`, `verify`, and `gitleaks`. Wo
 
 A failed check is repaired before merge; a missing or skipped required context is not equivalent to success. No required checks should be disabled or bypassed to obtain a green state.
 
+The verification job upgrades inherited packaging tools before auditing dependencies. The first
+remote run found the runner's setuptools 79.0.1 affected by
+[PYSEC-2026-3447](https://github.com/pypa/setuptools/security/advisories/GHSA-h35f-9h28-mq5c);
+the environment now requires the fixed version 83.0.0 or newer. The audit remains enabled.
+
 For local checks install `.[dev]`, then `bash scripts/verify.sh`. It keeps its unique temporary output and propagates the first failure. It does not delete outputs, install dependencies, access network services, or certify confidentiality. Public dependency vulnerability information and GitHub Actions remain separate online checks.
