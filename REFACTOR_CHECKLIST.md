@@ -1,3 +1,5 @@
+> Historical design/status material. The 2026-09-08 [current README](README.md) and [status record](docs/PORTFOLIO_STATUS.md) define implemented behavior and limitations; claims below are not current acceptance evidence.
+
 # FCT (Financial Control Tower) - 文档产品化修改清单
 
 ## 修改目标

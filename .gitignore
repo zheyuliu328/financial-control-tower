@@ -39,3 +39,15 @@ Thumbs.db
 # 日志
 *.log
 
+
+# Current generated outputs and build/test caches
+artifacts/offline-*/
+artifacts/demo-*/
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+build/
+dist/
+*.egg-info/

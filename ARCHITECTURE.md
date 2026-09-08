@@ -1,3 +1,5 @@
+> Historical design/status material. The 2026-09-08 [current README](README.md) and [status record](docs/PORTFOLIO_STATUS.md) define implemented behavior and limitations; claims below are not current acceptance evidence.
+
 # 🏗️ 企业级 ERP 架构设计
 
 ## 架构概述
