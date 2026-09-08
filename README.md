@@ -1,10 +1,12 @@
 # Financial Control Tower
 
-An offline educational Python/SQLite project for reconciliation, exception reporting and explicitly labelled rule evaluation. It demonstrates controls on invented examples; it is not a live ERP integration, fraud detector or production audit system.
+An offline educational Python project for table comparison, SQLite reconciliation, exception reporting and explicitly labelled rule evaluation. It demonstrates controls on invented examples; it is not a live ERP integration, fraud detector or production audit system.
 
 ## Run the complete offline example
 
-Python 3.9+. The installed runtime uses only the Python standard library; installation/build tools may need the internet, but the audit itself makes no network requests.
+**Have two actual tables to review?** The separate [`fct-compare` command](docs/table-comparison.md) accepts explicitly mapped CSV or value-only Excel files and produces a local HTML report, row-level CSV, exact JSON and source/file hashes. Composite keys, currency checks and tolerances are explicit; duplicate keys and invalid inputs remain blocked. This is a narrow technical comparison, not accounting or model-validation approval.
+
+Python 3.9+. The default SQLite and CSV runtime uses only the Python standard library. Excel input requires the optional `excel` extra. Installation/build tools may need the internet; the audit and table comparison make no network requests.
 
 ```bash
 python -m pip install .
@@ -19,6 +21,7 @@ From a checkout, `python main.py --sample --output /tmp/fct-example-new` uses th
 
 | Component | Current scope |
 | --- | --- |
+| Two-table comparison | `fct-compare` maps CSV/value-only Excel keys and numeric fields, blocks duplicate/invalid keys and currency disagreement, and publishes static HTML, CSV, exact JSON and a manifest |
 | Reconciliation | Both-side missing records, exact-decimal amount comparison, duplicate-key groups, invalid inputs and status exclusions |
 | Supply-chain rules | Shipping-before-order and negative-profit exceptions; missing/duplicate shipments and invalid dates remain visible |
 | Operating summary | Eligible-order monthly and regional sales/profit aggregates; zero-revenue margin is undefined |
@@ -37,7 +40,7 @@ The synthetic rule labels are separately declared toy outcomes, including disagr
 ## Verify
 
 ```bash
-python -m pip install '.[dev]'
+python -m pip install '.[dev,excel]'
 python -m pytest
 bash scripts/verify.sh
 python -m build --wheel

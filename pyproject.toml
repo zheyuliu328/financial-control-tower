@@ -13,12 +13,14 @@ requires-python = ">=3.9"
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest>=7,<10", "pytest-cov>=4,<8", "ruff==0.16.6", "bandit>=1.7,<2", "build>=1,<2"]
+dev = ["pytest>=7,<10", "pytest-cov>=4,<8", "ruff==0.16.6", "bandit>=1.7,<2", "build>=1,<2", "openpyxl>=3.1.5,<4", "defusedxml>=0.7,<1"]
+excel = ["openpyxl>=3.1.5,<4", "defusedxml>=0.7,<1"]
 legacy = ["pandas>=1.5", "numpy>=1.21"]
 download = ["pandas>=1.5", "kagglehub>=0.2", "python-dotenv>=1"]
 
 [project.scripts]
 fct = "financial_control_tower.cli:main"
+fct-compare = "financial_control_tower.table_cli:main"
 
 [project.urls]
 Homepage = "https://github.com/zheyuliu328/financial-control-tower"
@@ -27,7 +29,7 @@ Homepage = "https://github.com/zheyuliu328/financial-control-tower"
 packages = ["src/financial_control_tower"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src", "tests", "pyproject.toml", "README.md", "LICENSE", "docs/SCHEMA.md", "pytest.ini", "main.py", "quick_demo.py", "fraud_rule_metrics.py", "scripts"]
+include = ["src", "tests", "pyproject.toml", "README.md", "LICENSE", "docs/SCHEMA.md", "docs/table-comparison.md", "pytest.ini", "main.py", "quick_demo.py", "fraud_rule_metrics.py", "scripts"]
 
 [tool.ruff]
 line-length = 120
