@@ -1,57 +1,41 @@
 # Portfolio status: Financial Control Tower
 
-Audit baseline: 2026-09-07. This record separates runnable demonstrations, source-level functionality and proposed controls. It does not certify audit effectiveness, security or regulatory compliance.
+Updated 2026-09-08. The current scope is a complete offline educational audit workflow on explicit synthetic fixtures and a documented SQLite schema. This is not production, regulatory or real-fraud certification.
 
-## Scope and observed runs
+## Implemented repair
 
-The review read the public repository's code, tests and documentation. Sample runs used a separate temporary copy; the source checkout and its databases were not modified by those runs. No downloads, dependency installation, external ERP connection or destructive verification script was used.
+| Prior observed defect | Current implementation and verification requirement |
+| --- | --- |
+| Wheel/CLI referenced a missing package | Maintained `src/financial_control_tower` package; build a wheel, install it normally, and run the CLI outside the checkout |
+| `main --sample` created incompatible tables and swallowed errors | One fixture generator supplies the complete schema; all entries use the CLI; missing-input and overwrite attempts must exit nonzero |
+| Left join hid finance-only records and inflated matches | Explicit union of both sides; independent expected group classifications; duplicates and malformed input remain blocked |
+| Inner shipping join could hide negative profits | Profit evaluation is independent; missing/duplicate shipment and invalid-date issues remain visible |
+| Metrics used Series `not`, malformed SQL and circular heuristic labels | Boolean confusion matrices on explicit labels with source; unlabelled scores and undefined ratios are null; synthetic tests contain TP/FP/TN/FN |
+| Tests only asserted true or accepted stale reports | Fresh isolated fixtures, exact classifications, read-only input hashes, installed CLI and failure-path assertions |
+| Make/verify could mask failures or delete output | Failure propagation and unique temporary output; no deletion, automatic installation or network request in the local verification script |
+| New Ruff formatted historical Markdown examples; required context names differed | Pinned Ruff checks all maintained Python paths; jobs use actual `lint`, `test`, `e2e`, `verify`, `gitleaks` names without changing branch protection |
 
-| Entry point | Observed result | What it establishes |
-| --- | --- | --- |
-| `python quick_demo.py` | Exit 0; eight sample orders matched by amount, zero mismatches, SQLite records and JSON summary produced | A tiny matched-record demonstration runs. It does not establish comprehensive reconciliation or fraud detection. |
-| `python scripts/run_real.py data/sample_erp.csv --output <new-directory>` | Exit 0; four rows and two exceptions | Required-column checks, a negative-amount flag and a missing-account-code flag work on the fixture. |
-| `python main.py --sample` | Reports `no such table: accounts_receivable` but exits 0 | The sample initializer and the full engine have incompatible schemas; exit status also masks the failure. |
-| SQLite log probe in the temporary demo | No triggers; one row could be updated inside a transaction, which was rolled back | The observed log is mutable. No immutability or tamper-evidence guarantee was demonstrated. |
+## Evidence and current-run gates
 
-The source audit and smoke tests do not establish correctness on a full external DataCo dataset or a real ERP export. The full dataset preparation path was not run.
+The repair uses a temporary build/test environment and retains source CSVs, databases and existing artifacts unchanged. Unit tests compare the toy classifications with explicit expectations; a normal wheel installation and isolated `fct` execution check packaging. Current-run outputs must be generated into fresh directories.
 
-## Functional boundaries and repair criteria
+Remote CI is a separate gate: see [Actions](https://github.com/zheyuliu328/financial-control-tower/actions). Do not infer it passed from this document or a local command. Required contexts include lint, substantive tests, installed-wheel e2e, security verification and Gitleaks. The historical main run at `d1030a33` failed formatting and skipped downstream tests; it does not describe the repaired implementation's eventual CI result.
 
-| Topic | Source evidence | Accurate interpretation / acceptance criterion |
-| --- | --- | --- |
-| Quick-demo matching | [`quick_demo.py`](../quick_demo.py) iterates finance rows and selects the first matching operations row | Basic amount comparison for matched IDs. Add missing-on-each-side and duplicate-key fixtures; verify counts, coverage and denominators before claiming complete reconciliation. |
-| Full-engine reconciliation | [`financial_control_tower.py`](../src/audit/financial_control_tower.py) uses an operations-led left merge | Supports operations missing from receivables and matched-key amount differences. It is not a full outer join; finance-only records and join cardinality need explicit handling. The printed matched count includes key matches with amount differences. |
-| Offline sample schema | [`main.py`](../main.py) creates `order_revenue`; the engine queries `accounts_receivable` and later needs shipping/order detail columns | Supply one documented schema for sample initialization and runtime. A full isolated sample run must finish and produce asserted findings. |
-| Failure status | [`main.py`](../main.py) catches exceptions and prints them without failing the process | Return a nonzero exit code when the audit cannot execute. Tests must check both result artifacts and exit status. |
-| Single-file checks | [`scripts/run_real.py`](../scripts/run_real.py) reads one CSV and checks negative amounts/missing account codes | Describe as CSV exception checks. A negative amount can be a valid refund, not proven fraud. |
-| Rule metrics | [`fraud_rule_metrics.py`](../fraud_rule_metrics.py) applies Python `not` to pandas Series, has a malformed default negative-margin query, and derives labels from its own heuristics | Repair the boolean/SQL logic and test nonempty fixtures. Report heuristic-label agreement separately from performance against independently labelled fraud. |
-| Runtime logs | [`quick_demo.py`](../quick_demo.py), [`create_audit_db`](../src/data_engineering/init_erp_databases.py) and the core log writer create/append ordinary SQLite rows | Describe exception records and traceability only. There is no implemented hash/signature field, hash chain or deployed update/delete trigger in these paths. |
-| Security design | [`security_architecture.md`](../security_architecture.md) contains suggested triggers, hash calculations and role controls | These are design examples, not installed runtime controls. Even a future hash chain should be described according to a tested threat model, not as absolute immutability. |
-| ERP integration | [`erp_integration_design.md`](../erp_integration_design.md) is architecture documentation; the depicted `src/integration` package is absent | Do not claim SAP/Oracle connectivity. Acceptance needs an implemented connector contract and reproducible integration tests. |
-| Packaging | [`pyproject.toml`](../pyproject.toml) points its wheel and `fct` command at a missing `src/financial_control_tower` package | File-based examples are the current known entry points. Fix package layout and verify installation in a clean environment before documenting an installed CLI. |
-| Test confidence | [`test_basic.py`](../tests/test_basic.py) only asserts true; [`test_e2e.py`](../tests/test_e2e.py) accepts an existing report; Makefile checks can hide failure | Use fresh temporary output directories and substantive expected-result assertions. Propagate failures. |
+## Boundaries retained
 
-The audit did not run `scripts/verify.sh`: it deletes existing output-directory contents and treats some failures as optional. Its aggregate success message is not accepted as evidence for the claims above.
+Local revalidation on 2026-09-08 completed **37 tests**, Ruff/format, Bandit, dependency consistency,
+normal wheel installation and a complete installed CLI run outside the checkout. An independent
+review added **11 counterexample checks**, including missing-region reconciliation, null/valid ID
+separation, strict dates, WAL/journal and linked-file input protection, and 341 label-matrix cases.
+The source files are unchanged on those failure paths. The main review repeated the full local
+verifier in a separate Python 3.12 environment; the 10 original tracked data/artifact files remained
+byte-identical. These local results are separate from the revision-specific remote gates above.
 
-## Data provenance
+- Ordinary SQLite logs are mutable; the test demonstrates this rather than claiming immutability.
+- No SAP/Oracle connector, RBAC, hash chain, signature, encrypted storage or regulatory certification is implemented.
+- Label agreement on invented fixtures is not measured real-world fraud detection. Caller-provided labels retain their declared/unverified origin.
+- The data model assumes one order and one receivable per ID, one currency, prescribed statuses and ISO dates. Partial invoices, FX conversion, general-ledger accounting policies and production-scale controls require separate design.
+- Historical DataCo/Kaggle preparation scripts remain optional. Their source-handle discrepancy, source/version/terms and independent-source limitations are unresolved and outside the offline demo.
+- Existing `data/` and historical `artifacts/` files are not acceptance evidence for the new run and are not regenerated by the new sample.
 
-| Route | Repository evidence | What still needs to be stated or verified |
-| --- | --- | --- |
-| Eight-order sample | [`operations_sample.csv`](../data/sample/operations_sample.csv) and [`finance_sample.csv`](../data/sample/finance_sample.csv) | Toy matching fixtures. Add deliberately anomalous records and expected findings; document the sample construction. |
-| Four-transaction CSV | [`sample_erp.csv`](../data/sample_erp.csv) | Illustrates negative amounts and missing account codes; not a labelled fraud benchmark. |
-| Full setup | [`setup_project.py`](../scripts/setup_project.py) names `shashwatwork/dataco-smart-supply-chain-for-big-data-analysis` on Kaggle | This may use a cached download or contact Kaggle, and may install `kagglehub`. External provenance and terms were not verified in the offline audit. |
-| Alternative downloader | [`download_data.py`](../scripts/download_data.py) names `rohanrao/data-co-supply-chain-dataset` | Reconcile this different handle with the setup route. Record the chosen version and input-file checksum instead of assuming the two sources are interchangeable. |
-| Simulated ledgers | [`init_erp_databases.py`](../src/data_engineering/init_erp_databases.py) derives operations and finance tables from the source data | Two generated databases are not independent evidence from two live corporate systems. |
-
-Add the source URL, original publisher, dataset release/version, retrieval date, license/terms, transformations, field mapping and checksum to any future full-data reproduction. The code's MIT license does not establish rights to redistribute external datasets. No new conclusion about external data licensing was reached in this audit.
-
-## Evidence needed before stronger claims
-
-- A complete offline audit on a compatible sample schema, with current-run outputs and nonzero failure exits.
-- Explicit tests for missing records in either direction, duplicate IDs, amount mismatches, rounding policy, cancelled/pending states and invalid input.
-- Repaired rule metrics, with labels clearly distinguished from the rules being evaluated.
-- Implemented and tested logging controls, including what an actor with database-file access can still change.
-- Verified package installation and CLI behavior in a clean supported environment.
-- A provenance manifest for each optional external dataset and a separate evaluation report for any real-data claim.
-
-These are future acceptance criteria, not completed work. The separate [model-risk-lab](https://github.com/zheyuliu328/model-risk-lab) is a fully synthetic model-validation portfolio direction; it makes no claim about this audit system's maturity.
+See [schema and counting units](SCHEMA.md), [current quickstart](quickstart.md) and [limitations](limitations.md). Older completion, integration and security pages are historical design notes, not additional implemented capabilities.

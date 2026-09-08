@@ -1,3 +1,5 @@
+> Historical design/status material. The 2026-09-08 [current README](README.md) and [status record](docs/PORTFOLIO_STATUS.md) define implemented behavior and limitations; claims below are not current acceptance evidence.
+
 # 项目完成报告 ✅
 
 > 哲宇，财务控制塔 (Financial Control Tower) 已经构建完成！

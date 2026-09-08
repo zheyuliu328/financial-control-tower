@@ -1,63 +1,58 @@
 # Financial Control Tower
 
-An educational Python/SQLite project for financial-data reconciliation and exception reporting. It demonstrates data-control techniques with small examples and optional public supply-chain data; it is not a live ERP integration or production audit system.
+An offline educational Python/SQLite project for reconciliation, exception reporting and explicitly labelled rule evaluation. It demonstrates controls on invented examples; it is not a live ERP integration, fraud detector or production audit system.
+
+## Run the complete offline example
+
+Python 3.9+. The installed runtime uses only the Python standard library; installation/build tools may need the internet, but the audit itself makes no network requests.
+
+```bash
+python -m pip install .
+fct --sample --output /tmp/fct-example-new
+```
+
+Use a **new or empty** destination each time. The command creates fresh sample databases, `audit.db` and `audit_report.json` under that destination. It never replaces the repository's existing CSVs, databases or historical artifacts. A successful exit means execution completed; the report deliberately contains exceptions and blocked inputs.
+
+From a checkout, `python main.py --sample --output /tmp/fct-example-new` uses the same engine. `quick_demo.py`, `fraud_rule_metrics.py` and `scripts/run_financial_audit.py` also route to the maintained CLI. Without `--output`, a unique directory under `artifacts/offline-*` is selected. See [quickstart](docs/quickstart.md).
 
 ## What is implemented
 
-| Component | Scope |
+| Component | Current scope |
 | --- | --- |
-| [Offline quick demo](quick_demo.py) | Loads two bundled sample CSVs into SQLite, compares amounts for matching order IDs, and writes a JSON summary plus ordinary audit records. |
-| [CSV checks](scripts/run_real.py) | Checks required columns and flags negative amounts or missing account codes in a single CSV. This is not a reconciliation between two independent systems. |
-| [Core audit prototype](src/audit/financial_control_tower.py) | Operations-to-receivables left-join checks, amount differences, shipping-date/negative-profit rules and summary queries, using the fuller database schema. |
-| [Integration/security designs](erp_integration_design.md) | Architecture proposals. SAP/Oracle connectors, access controls and tamper-resistant logging are not verified runtime capabilities. |
+| Reconciliation | Both-side missing records, exact-decimal amount comparison, duplicate-key groups, invalid inputs and status exclusions |
+| Supply-chain rules | Shipping-before-order and negative-profit exceptions; missing/duplicate shipments and invalid dates remain visible |
+| Operating summary | Eligible-order monthly and regional sales/profit aggregates; zero-revenue margin is undefined |
+| Rule metrics | TP/FP/TN/FN and ratios only with explicit labels and source; unlabelled inputs report counts, with scores set to null |
+| Packaging | Installable `financial_control_tower` wheel and `fct` entry point; CLI tests run outside the checkout |
+| Evidence | Fresh JSON classifications, source-database hashes and ordinary mutable SQLite records |
 
-## Offline examples
+The complete invented fixture has eight operations rows and six receivable rows. Its seven classified ID groups are: **2 matched, 1 amount mismatch, 1 operations-only, 1 finance-only, 1 duplicate key, 1 invalid input**. One pending operations row is explicitly excluded. Invalid rows and duplicate groups block any claim of complete valid-input coverage; they are not silently dropped or deduplicated.
 
-Run from a fresh demo checkout with Python 3.9+ and pandas already installed. These examples make no network requests.
+## Input contract and interpretation
+
+`fct --data-dir /path/to/inputs --output /path/to/new-output` reads the documented [SQLite schema and policies](docs/SCHEMA.md) in read-only mode. Supply stable checkpointed database copies: nonempty WAL/rollback journals and hardlinked inputs are rejected and before/after input fingerprints must agree. The tool never checkpoints live sources. Each order ID is expected once on each side. Amounts must be finite decimal values in a single agreed currency; no FX conversion or financial-statement recognition policy is inferred. The tolerance is explicitly inclusive at 0.01 currency units.
+
+The synthetic rule labels are separately declared toy outcomes, including disagreement with the rule. They are not real fraud confirmations. Without supplied labels, precision/recall/confusion counts are null. Missing dates, records and invalid values remain data-quality gaps rather than evidence that a check passed.
+
+## Verify
 
 ```bash
-# Four toy transactions; produces a JSON exception report.
-python scripts/run_real.py data/sample_erp.csv --output artifacts/csv_demo
-
-# Eight toy orders; creates/replaces local demo tables and writes a summary.
-python quick_demo.py
+python -m pip install '.[dev]'
+python -m pytest
+bash scripts/verify.sh
+python -m build --wheel
 ```
 
-`quick_demo.py` writes to `data/db_operations.db`, `data/db_finance.db`, `data/audit.db` and `artifacts/quickstart_report.json`. Use a separate demo copy if those paths contain work you need to preserve.
+The verification script propagates failures, uses a fresh temporary sample destination, does not install dependencies, and never deletes existing outputs. Its tools must already be installed. CI runs the `lint`, `test`, `e2e`, `verify` and `gitleaks` checks; a workflow definition or local test result is not proof of a successful remote run. [Current Actions results](https://github.com/zheyuliu328/financial-control-tower/actions) are the remote evidence.
 
-In the 2026-09-07 isolated smoke test, CSV checks flagged two exceptions in four rows. The quick demo reported eight amount matches and zero mismatches. These small fixtures establish that those paths run; they do not establish detection accuracy, full reconciliation coverage or real-world audit effectiveness.
+## Retained boundaries
 
-## Current limits
+- Logs are ordinary, mutable SQLite records. No hash chain, signature, immutable store, RBAC or tested tamper prevention is implemented.
+- SAP/Oracle connectivity and enterprise security documents remain proposals. They are not runtime capabilities.
+- Two constructed ledgers are not independent evidence from two corporate systems. No real-world fraud accuracy, regulatory compliance or production suitability is established.
+- Existing optional DataCo/Kaggle download scripts remain outside the offline runtime. Their different dataset handles, release versions and usage terms still require reconciliation before a reproducible external-data claim. The MIT code license does not establish third-party data rights.
+- The historical single-CSV check is still available with `pip install '.[legacy]'`, then `python scripts/run_real.py data/sample_erp.csv --output /tmp/new-csv-example`. It is a single-file exception check, not two-system reconciliation.
 
-- Audit records are ordinary mutable SQLite rows. No runtime hash chain, signature, immutable store or tested update/delete prevention was found. SHA-256 and trigger examples in the security document are design material.
-- The quick demo compares matched IDs. It does not report all unmatched records from both sides or validate duplicate-key/cardinality rules.
-- `main.py --sample` does not currently create the schema required by the full engine. The audit observed a missing `accounts_receivable` table, followed by an error message with exit code 0.
-- The separate rule-metrics module needs repair and uses heuristic labels, not independently confirmed fraud outcomes. TP/FP/FN claims are not established performance evidence.
-- `scripts/setup_project.py` may install a package and download data. It is an optional online preparation path, not the offline quickstart.
-- Packaging and automated acceptance checks require follow-up. See [Portfolio status](docs/PORTFOLIO_STATUS.md) for the evidence and next gates.
+[Status and repair evidence](docs/PORTFOLIO_STATUS.md) · [Input schema](docs/SCHEMA.md) · [Limitations](docs/limitations.md) · [Independent model-validation lab](https://github.com/zheyuliu328/model-risk-lab)
 
-## Data sources
-
-The bundled CSVs are small illustrative inputs. The optional full-data setup names the public DataCo supply-chain dataset on Kaggle. Two download scripts currently name different Kaggle dataset handles, so the chosen source and version must be reconciled before claiming a reproducible full-data run.
-
-No external dataset was downloaded or verified in the offline smoke test. Document publisher, dataset version, retrieval date, transformations and usage terms separately; the repository's code license does not establish third-party data rights. The simulated finance records are not an independent company's accounting ledger.
-
-## Next acceptance milestones
-
-1. Make the offline sample schema compatible with the complete audit engine, with explicit nonzero failure exits.
-2. Add fixtures with missing orders on both sides, duplicate IDs, amount differences and invalid values; assert expected classifications.
-3. Repair the rule-metrics module and separate synthetic/heuristic labels from confirmed outcomes.
-4. Test any future logging-integrity mechanism against a stated threat model before making security guarantees.
-
-## Navigation
-
-- [Portfolio status and audit evidence](docs/PORTFOLIO_STATUS.md)
-- [Core source](src/audit/financial_control_tower.py)
-- [CSV input format](docs/real-data.md)
-- [Project limitations](docs/limitations.md)
-- [Security design, not implemented guarantees](security_architecture.md)
-- [ERP integration design](erp_integration_design.md)
-- [MIT code license](LICENSE)
-- [Separate fully synthetic model-validation lab](https://github.com/zheyuliu328/model-risk-lab)
-
-Start with this page and the status record. Older quickstart and architecture pages may describe intended behavior that has not passed the current acceptance checks.
+The current runtime and tests were revised with AI assistance. Older architecture/completion pages are retained as historical material; this README and the status record define current scope.

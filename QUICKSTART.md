@@ -1,3 +1,5 @@
+> Historical design/status material. The 2026-09-08 [current README](README.md) and [status record](docs/PORTFOLIO_STATUS.md) define implemented behavior and limitations; claims below are not current acceptance evidence.
+
 # 快速启动指南 (Quick Start Guide)
 
 > 📌 **目标**: 3 分钟内运行完整的财务控制塔系统

@@ -4,55 +4,35 @@ build-backend = "hatchling.build"
 
 [project]
 name = "financial-control-tower"
-version = "2.0.0"
-description = "Enterprise-grade ERP audit system with fraud detection and compliance tracking"
+version = "2.1.0"
+description = "Offline educational reconciliation, exception reporting and labelled rule evaluation"
 readme = "README.md"
 license = {text = "MIT"}
-authors = [
-    {name = "Zheyu Liu", email = "zheyuliu328@gmail.com"}
-]
-keywords = ["erp", "audit", "fraud-detection", "compliance", "financial-control"]
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Financial and Insurance Industry",
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Topic :: Office/Business :: Financial",
-]
+authors = [{name = "Zheyu Liu"}]
 requires-python = ">=3.9"
-dependencies = [
-    "pandas>=1.5.0",
-    "numpy>=1.21.0",
-    "streamlit>=1.15.0",
-    "plotly>=5.0.0",
-    "kagglehub>=0.1.0",
-    "python-dotenv>=0.19.0",
-]
+dependencies = []
 
 [project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "pytest-cov>=4.0.0",
-    "ruff>=0.1.0",
-]
+dev = ["pytest>=7,<10", "pytest-cov>=4,<8", "ruff==0.16.6", "bandit>=1.7,<2", "build>=1,<2"]
+legacy = ["pandas>=1.5", "numpy>=1.21"]
+download = ["pandas>=1.5", "kagglehub>=0.2", "python-dotenv>=1"]
 
 [project.scripts]
 fct = "financial_control_tower.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/zheyuliu328/financial-control-tower"
-Documentation = "https://github.com/zheyuliu328/financial-control-tower#readme"
-Repository = "https://github.com/zheyuliu328/financial-control-tower"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/financial_control_tower"]
 
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "pyproject.toml", "README.md", "LICENSE", "docs/SCHEMA.md", "pytest.ini", "main.py", "quick_demo.py", "fraud_rule_metrics.py", "scripts"]
+
 [tool.ruff]
 line-length = 120
+target-version = "py39"
+
+[tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM"]
 ignore = ["UP035", "UP006", "E501", "E402"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
