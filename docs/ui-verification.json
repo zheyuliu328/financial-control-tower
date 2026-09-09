@@ -1,0 +1,135 @@
+{
+  "date": "2026-09-09",
+  "version": "2.2.0",
+  "python_tests": {
+    "passed": 128,
+    "skipped": 0
+  },
+  "lint": "pass",
+  "format": "pass",
+  "bandit": "pass",
+  "dependency_consistency": "pass",
+  "normal_wheel_install": "pass; site-packages import and installed CLI launched outside checkout",
+  "macos_launcher": "pass; started the installed 2.2.0 application on loopback",
+  "browser": {
+    "status": "pass",
+    "version": "2.2.0",
+    "browser": "152.0.7977.82",
+    "launchedOutsideCheckout": true,
+    "sourcePathInjection": false,
+    "exactCurrencyRecords": 28,
+    "commonUnitCase": {
+      "records": 4,
+      "matched": 3,
+      "amountMismatch": 1
+    },
+    "compositeKeyRetained": true,
+    "multipleValues": true,
+    "currencySubtractionBlocked": true,
+    "filtersAndPagination": "pass",
+    "unchangedHeaderRereadTemporarilyLocksDownloads": true,
+    "restoredSettingsRetireDownloads": true,
+    "fileChangeRetiresDownloadsBeforeInspectionCompletes": true,
+    "offlineReportAfterServerExit": true,
+    "originalSourcesUnchanged": true,
+    "externalRequests": [],
+    "pageErrors": [],
+    "inspectionCorrections": [
+      {
+        "endpoint": "/api/inspect",
+        "error": "row 3 has a different width from its header"
+      }
+    ],
+    "humanUsabilityTrial": "not performed"
+  },
+  "export_validation": [
+    {
+      "scenario": "currency",
+      "field_records": 28,
+      "all_member_hashes": "pass",
+      "exact_records": "pass",
+      "source_code_hashes": "pass",
+      "source_bytes": "unchanged",
+      "html_active_content": "none"
+    },
+    {
+      "scenario": "unit",
+      "field_records": 4,
+      "all_member_hashes": "pass",
+      "exact_records": "pass",
+      "source_code_hashes": "pass",
+      "source_bytes": "unchanged",
+      "html_active_content": "none"
+    }
+  ],
+  "visual_checks": {
+    "desktop": "1440x1000",
+    "narrow": "390x844",
+    "captures": 16,
+    "document_overflow": false,
+    "manual_screenshot_inspection": "pass"
+  },
+  "independent_review": {
+    "http": {
+      "status": "pass",
+      "scenario_count": 5,
+      "assertions": 46,
+      "scenarios": [
+        "Explicit mixed-file inspection",
+        "Comparison retains independent hand-counted exception structure",
+        "Portable evidence and offline replay",
+        "Local transport and path rejection",
+        "Run identity binds immutable settings and cache evicts oldest"
+      ]
+    },
+    "installed_cli": {
+      "status": "pass",
+      "scenario_count": 4,
+      "assertions": 6,
+      "scenarios": [
+        "normal installed provenance and mixed exception run",
+        "existing output preserved",
+        "matched tolerance boundary",
+        "invalid input no output"
+      ]
+    },
+    "browser": {
+      "status": "pass",
+      "scenario_count": 4,
+      "assertions": 24,
+      "scenarios": [
+        "Installed browser accepts independent mixed headers and explicit positional mapping",
+        "Filtered report and ZIP bind full current run while input editing is locked",
+        "Editing invalidates output and header refresh temporarily locks downloads",
+        "Late comparison response cannot revive a changed revision"
+      ]
+    }
+  },
+  "findings_closed": [
+    "Report and ZIP controls now remain locked during same-header reinspection."
+  ],
+  "findings_open": [],
+  "existing_tracked_data_artifact_files_unchanged": 10,
+  "human_usability_trial": "not performed; task cards and blank observation form prepared",
+  "repeat_real_task_adoption": "not established",
+  "source_sha256": {
+    "src/financial_control_tower/__init__.py": "dc6152befc3972dd9a7adf28801cf484d6b8cc6dd0920fa5593bb920dd93c450",
+    "src/financial_control_tower/cli.py": "007329ac12ba5d924fe44e0ce9a6aef531a8c599858d0b4e276d668da60a6b61",
+    "src/financial_control_tower/engine.py": "3212d4527b349e17adcc81941c2ee8243f53bad72832228e6ed731ad9e24aa41",
+    "src/financial_control_tower/rules.py": "6df08756646a082114310958f5329e05b87a6fac5be21d860c7ae1522f036763",
+    "src/financial_control_tower/sample.py": "a54a19bd468fffb21d6f3d2c2cee9499905f0e137ca5d0545b6d8ee708f58053",
+    "src/financial_control_tower/static/app.js": "489e12f7a3a896a17cafdbbba3b39be1598cdb683eda664c17332b28697ccdfb",
+    "src/financial_control_tower/static/index.html": "d146156fda2d4c2268b456905d57850fc553932834d6f18cc142c26d51aedcbc",
+    "src/financial_control_tower/static/styles.css": "400de2eb723863edc4b30024a07f37b7a600c22e0db2b21212a951cdb178341f",
+    "src/financial_control_tower/table_cli.py": "bee2532499fb0403cc25f8fae6ad2dff5e11654058877b9b7656bc7f3c64ff40",
+    "src/financial_control_tower/table_compare.py": "0d7fef77df926097a694e6cef254b6a79d5a20cedaa4d26834c2064c2591e413",
+    "src/financial_control_tower/table_ui.py": "e90f06d4e254cd549756557cd71a67674da1c9daa743ad74c725a377d372a328",
+    "src/financial_control_tower/table_workspace.py": "9098608e02d372cbee91855728f7c035ff89b3c704a868214cde1a4aa7c6ff64"
+  },
+  "test_sha256": {
+    "tests/test_table_ui.py": "f189218c000d709be1e3bc3b5a65e6f53300bd795085c5f5285a45552815d887",
+    "tests/browser-ui.cjs": "cfd5804b11d550f4522b1de905aff85d50f8ceafd7133a63c52b2233288c6121",
+    "tests/make_ui_fixtures.py": "ed9e8f532ceededfad06cefa62a693567cfaf0d8f1620588fa0d50dc9841b00d"
+  },
+  "remote_ci": "Check GitHub Actions for the exact revision; local verification is recorded independently."
+}

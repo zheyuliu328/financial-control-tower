@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "financial-control-tower"
-version = "2.1.0"
+version = "2.2.0"
 description = "Offline educational reconciliation, exception reporting and labelled rule evaluation"
 readme = "README.md"
 license = {text = "MIT"}
@@ -21,6 +21,7 @@ download = ["pandas>=1.5", "kagglehub>=0.2", "python-dotenv>=1"]
 [project.scripts]
 fct = "financial_control_tower.cli:main"
 fct-compare = "financial_control_tower.table_cli:main"
+fct-ui = "financial_control_tower.table_ui:main"
 
 [project.urls]
 Homepage = "https://github.com/zheyuliu328/financial-control-tower"
@@ -29,7 +30,7 @@ Homepage = "https://github.com/zheyuliu328/financial-control-tower"
 packages = ["src/financial_control_tower"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src", "tests", "pyproject.toml", "README.md", "LICENSE", "docs/SCHEMA.md", "docs/table-comparison.md", "pytest.ini", "main.py", "quick_demo.py", "fraud_rule_metrics.py", "scripts"]
+include = ["src", "tests", "pyproject.toml", "README.md", "LICENSE", "docs/SCHEMA.md", "docs/table-comparison.md", "docs/table-ui.zh-CN.md", "docs/USER_TRIAL.zh-CN.md", "docs/ui-verification.json", "docs/images/table-ui.png", "pytest.ini", "main.py", "quick_demo.py", "fraud_rule_metrics.py", "scripts", "start-ui.command", "package.json", "package-lock.json"]
 
 [tool.ruff]
 line-length = 120
