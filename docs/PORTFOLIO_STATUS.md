@@ -1,6 +1,6 @@
 # Portfolio status: Financial Control Tower
 
-Updated 2026-09-08. The current scope is a complete offline educational audit workflow on explicit synthetic fixtures and a documented SQLite schema. This is not production, regulatory or real-fraud certification.
+Updated 2026-09-09. The current scope includes a local graphical/CLI two-table comparison and an offline educational audit workflow on explicit synthetic fixtures and a documented SQLite schema. This is not production, regulatory or real-fraud certification.
 
 ## Implemented repair
 
@@ -35,7 +35,19 @@ The separate `fct-compare` CLI accepts two CSV or value-only `.xlsx` tables with
 
 The completed local verification now comprises **97 tests: the earlier 37 plus 60 table-comparison tests, with zero skips**, on macOS/Python 3.12.14. Ruff, format checks, Bandit, dependency consistency and the existing installed audit CLI also passed. A normal wheel installation exercised `fct-compare` outside the checkout. Eight damaged-Excel cases confirm exit 2, no published directory and unchanged input hashes, including missing OOXML parts, malformed XML, invalid shared-string references and invalid workbook field types. CI test, compatibility and verification jobs explicitly install `.[dev,excel]`; the separate wheel CSV smoke remains available without Excel dependencies. These are local checks and workflow requirements, not evidence of a future remote run.
 
-The delivered interaction is a CLI. GUI field selection is not implemented, and an observed trial by a second analyst has not yet been performed. The static report has been designed for direct file opening; those remaining usability questions must not be inferred from test counts.
+Version 2.1 delivered a CLI. Version 2.2 closes the graphical file/field-selection gap as described below. An observed trial by a second analyst has not yet been performed; it must not be inferred from test counts.
+
+## Local graphical workflow — 2026-09-09
+
+`fct-ui` accepts actual CSV and value-only Excel files in a loopback-only browser application, with explicit worksheet/header selection, paired composite keys and multiple numeric fields, currency columns or a declared common unit, and the existing max-based symmetric tolerance rule. It displays exact field-level results, status/source/search filters, pagination and separate source-row coverage. Editing input or settings retires the old result and download controls; unchanged-header reinspection temporarily locks exports. Comparison and export operations lock input editing, and late responses cannot revive an outdated revision.
+
+The existing calculation engine is reused without changing its accounting, matching or tolerance semantics. The browser adapter exports a complete ZIP with byte-identical selected sources, portable relative paths, original filenames, exact JSON, CSV, static HTML, request settings and hashes. The session retains at most three runs within 128 MiB, expiring after an hour; downloaded ZIPs are independent of the running service. The Mac launcher uses a separate project environment and normal package installation.
+
+Local validation completed **128 Python tests, zero skips**, Ruff/format, Bandit and dependency consistency checks. The normal installed wheel was launched outside the checkout. Real-file browser workflows independently checked 28 currency-mode fields plus four declared-unit fields, all source/output/installed-code hashes, file preservation, filtering, stale-result protection, downloads, desktop/narrow layouts and report reading after the server exited. One deliberately wrong initial header is rejected before the user selects the correct header; this is recorded separately from unexpected API failures.
+
+An additional read-only reviewer used different CSV/XLSX layouts: **5 HTTP/evidence scenarios with 46 assertions, 4 installed-CLI scenarios with 6 assertions, and 4 browser scenarios with 24 assertions**. Their 24-field mixed example retained all nine left and eight right source rows. The ten existing tracked data/artifact files remain unchanged. See [the source-bound local record](ui-verification.json), [graphical instructions](table-ui.zh-CN.md) and [revision-specific remote checks](https://github.com/zheyuliu328/financial-control-tower/actions).
+
+Four independently invented participant files, a 15-minute task card, facilitator expectations and an empty observation form are prepared. **Independent human first use and repeat adoption in real work remain unverified.** No participant observations, completion times, success rates or quotations have been invented. [Trial protocol](USER_TRIAL.zh-CN.md).
 
 ## Boundaries retained
 

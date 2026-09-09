@@ -1,0 +1,8 @@
+{
+  "name": "fct-browser-checks",
+  "private": true,
+  "version": "2.2.0",
+  "description": "Browser acceptance checks; not a runtime dependency",
+  "scripts": {"test:browser": "node tests/browser-ui.cjs"},
+  "devDependencies": {"playwright": "1.62.1"}
+}

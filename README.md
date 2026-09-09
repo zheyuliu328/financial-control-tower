@@ -2,6 +2,16 @@
 
 An offline educational Python project for table comparison, SQLite reconciliation, exception reporting and explicitly labelled rule evaluation. It demonstrates controls on invented examples; it is not a live ERP integration, fraud detector or production audit system.
 
+## Compare your own CSV or Excel files
+
+**The graphical entry is available in 2.2.0.** Install `python -m pip install '.[excel]'`, then run `fct-ui` to choose files, worksheets, headers, composite keys and numeric field pairs in a local browser. The page shows field-level differences, blocked inputs and source-row coverage, and downloads a portable evidence ZIP with the exact input snapshots. On macOS, `start-ui.command` installs into a separate local environment and opens the tool. [中文图形操作说明](docs/table-ui.zh-CN.md).
+
+Files are sent only to the loopback process on your computer. After installation, the browser workflow needs no external connection. Source files are not overwritten. The interface uses the same exact-decimal engine and policies as the CLI; it does not infer business mappings, approve reconciliation or validate a model.
+
+![Graphical field comparison using independently invented files](docs/images/table-ui.png)
+
+The screenshot filters two amount differences; the complete result contains 28 field checks. Filtering does not reduce the exported evidence. [Recorded local verification](docs/ui-verification.json) and [independent human trial kit instructions](docs/USER_TRIAL.zh-CN.md) distinguish software checks from human usability evidence.
+
 ## Run the complete offline example
 
 **Have two actual tables to review?** The separate [`fct-compare` command](docs/table-comparison.md) accepts explicitly mapped CSV or value-only Excel files and produces a local HTML report, row-level CSV, exact JSON and source/file hashes. Composite keys, currency checks and tolerances are explicit; duplicate keys and invalid inputs remain blocked. This is a narrow technical comparison, not accounting or model-validation approval.
@@ -21,12 +31,13 @@ From a checkout, `python main.py --sample --output /tmp/fct-example-new` uses th
 
 | Component | Current scope |
 | --- | --- |
+| Local graphical comparison | `fct-ui` provides real file/sheet/header selection, paired key/value mappings, currency/unit and tolerance controls, preview, filtering and complete offline ZIP export |
 | Two-table comparison | `fct-compare` maps CSV/value-only Excel keys and numeric fields, blocks duplicate/invalid keys and currency disagreement, and publishes static HTML, CSV, exact JSON and a manifest |
 | Reconciliation | Both-side missing records, exact-decimal amount comparison, duplicate-key groups, invalid inputs and status exclusions |
 | Supply-chain rules | Shipping-before-order and negative-profit exceptions; missing/duplicate shipments and invalid dates remain visible |
 | Operating summary | Eligible-order monthly and regional sales/profit aggregates; zero-revenue margin is undefined |
 | Rule metrics | TP/FP/TN/FN and ratios only with explicit labels and source; unlabelled inputs report counts, with scores set to null |
-| Packaging | Installable `financial_control_tower` wheel and `fct` entry point; CLI tests run outside the checkout |
+| Packaging | Installable wheel with `fct`, `fct-compare` and `fct-ui`; normal installed execution is checked outside the checkout |
 | Evidence | Fresh JSON classifications, source-database hashes and ordinary mutable SQLite records |
 
 The complete invented fixture has eight operations rows and six receivable rows. Its seven classified ID groups are: **2 matched, 1 amount mismatch, 1 operations-only, 1 finance-only, 1 duplicate key, 1 invalid input**. One pending operations row is explicitly excluded. Invalid rows and duplicate groups block any claim of complete valid-input coverage; they are not silently dropped or deduplicated.

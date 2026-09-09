@@ -2,6 +2,8 @@
 
 `fct-compare` helps an analyst review two CSV or Excel extracts using explicit keys and numeric column mappings. It produces a static HTML report, row-level CSV, exact JSON and a source/file manifest. No upload, server, network call, model fitting or accounting interpretation is involved.
 
+Prefer a graphical workflow? [`fct-ui`](table-ui.zh-CN.md) uses the same comparator behind a loopback-only browser application. Its ZIP adds the exact selected input snapshots and portable settings. The CLI described below remains server-free.
+
 ## Install
 
 From this repository, with Python 3.9+:

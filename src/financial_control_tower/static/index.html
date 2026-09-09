@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>双表核对 · Financial Control Tower</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到工作区</a>
+  <header class="app-header">
+    <a class="brand" href="/" aria-label="双表核对首页"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>双表核对<small>FINANCIAL CONTROL TOWER</small></span></a>
+    <div class="header-actions"><span class="local-badge"><span></span> 本机处理</span><button id="load-example" class="text-button" type="button" disabled>载入示例 <span aria-hidden="true">↗</span></button></div>
+  </header>
+  <main id="main">
+    <section class="intro">
+      <div><p class="eyebrow">从两份文件，到每一项差异</p><h1>逐项核对，<span>让差异可追溯。</span></h1><p class="lead">选择左右两张表，指定哪些列对应同一条数据、哪些数值需要核对。查看原值、差额和未能比较的原因。</p></div>
+      <aside class="local-note"><span aria-hidden="true">↳</span><div><strong>文件留在这台电脑上。</strong><p>只连接本机服务，不改写原文件。结果需要留存时，请下载证据包。</p></div></aside>
+    </section>
+    <nav class="journey" aria-label="核对步骤"><a href="#sources-heading"><span>01</span> 选择文件<small>确定工作表与表头</small></a><a href="#mapping-heading"><span>02</span> 对应字段<small>说明键、数值和单位</small></a><a href="#results-anchor"><span>03</span> 查看差异<small>保留每一个字段检查</small></a></nav>
+    <div id="app-status" class="notice" role="status" aria-live="polite">正在连接本机工作区…</div>
+    <div id="error" class="notice error hidden" role="alert"></div>
+    <form id="comparison-form" novalidate>
+      <fieldset id="input-fields" class="input-fields" disabled>
+        <div class="section-heading"><div><p class="eyebrow">01 / 选择数据</p><h2 id="sources-heading">左右两张表，从原文件开始。</h2></div><span class="tag">CSV / XLSX</span></div>
+        <div class="source-grid"><div id="left-source"></div><div id="right-source"></div></div>
+        <div class="section-heading mapping-heading"><div><p class="eyebrow">02 / 定义比较规则</p><h2 id="mapping-heading">哪些列，代表同一件事？</h2><p>每行左、右列按顺序对应；列名可以不同。</p></div></div>
+        <div class="mapping-grid">
+          <section class="panel">
+            <div class="panel-heading"><div><h3>记录键 <span class="small-tag">可组合</span></h3><p>例如“账户编号＋交易编号”，共同确定一条数据。</p></div><button id="add-key" class="button button-small" type="button">＋ 添加键</button></div>
+            <div class="pair-column-heading" aria-hidden="true"><span>左表列</span><span>右表列</span><span></span></div>
+            <div id="key-pairs"></div>
+            <p class="field-help">按原样匹配文本，保留前导零、空格和大小写。重复键不会被随意配对或加总。</p>
+          </section>
+          <section class="panel">
+            <div class="panel-heading"><div><h3>数值字段 <span class="small-tag">可多组</span></h3><p>每一对数值列，产生一项独立的字段检查。</p></div><button id="add-value" class="button button-small" type="button">＋ 添加数值</button></div>
+            <div class="pair-column-heading" aria-hidden="true"><span>左表列</span><span>右表列</span><span></span></div>
+            <div id="value-pairs"></div>
+            <p class="field-help">下方单位与容差适用于全部数值字段；请选择单位和核对规则相同的字段。</p>
+          </section>
+        </div>
+        <div class="rules-grid">
+          <section class="panel unit-panel">
+            <h3>先确定数值能否比较。</h3><p class="panel-description">逐行核对币种，或明确声明全部数值使用同一单位。</p>
+            <div class="unit-choices" role="group" aria-label="单位声明方式">
+              <label class="radio-label"><input id="unit-mode-currency" name="unit-mode" type="radio" value="currency" checked><span>两侧都有币种列</span></label>
+              <label class="radio-label"><input id="unit-mode-common" name="unit-mode" type="radio" value="common"><span>声明共同单位</span></label>
+            </div>
+            <div id="currency-fields" class="form-grid">
+              <label class="field">左表币种列<select id="left-currency"><option value="">选择币种列</option></select></label>
+              <label class="field">右表币种列<select id="right-currency"><option value="">选择币种列</option></select></label>
+            </div>
+            <div id="common-unit-fields" class="hidden"><label class="field">全部数值字段的共同单位<input id="common-unit" placeholder="例如：USD、元、百分比小数" maxlength="160"><small>这是你的声明；工具不会换算单位或验证声明是否正确。</small></label></div>
+            <p id="currency-help" class="field-help">币种文本不同或无效时停止相减；不做汇率换算或格式归一化。</p>
+          </section>
+          <section class="panel tolerance-panel">
+            <h3>允许多大的差异？</h3><p class="panel-description">默认严格相等。所有数值保留原有精度。</p>
+            <div class="form-grid">
+              <label class="field">绝对容差<input id="absolute-tolerance" value="0" inputmode="decimal" placeholder="例如：0.01"><small>使用被比较数值的单位。</small></label>
+              <label class="field">相对容差<input id="relative-tolerance" value="0" inputmode="decimal" placeholder="例如：0.001"><small>填比例：0.01 代表 1%。</small></label>
+            </div>
+            <div class="formula-note"><strong>允许差额，取下面两者较大值：</strong><span>绝对容差</span><span>相对容差 × 左、右数值绝对值中的较大值</span><small>|右值 − 左值| ≤ 允许差额，即在容差内。</small></div>
+          </section>
+        </div>
+        <div class="run-bar"><div><strong>不补零，不隐藏无法比较的行。</strong><p>Excel 公式、无效数值和不明确的键会保留为受阻记录。</p></div><button id="run-compare" class="button button-primary" type="submit" disabled>开始核对 <span aria-hidden="true">→</span></button></div>
+      </fieldset>
+    </form>
+    <div id="results-anchor"></div>
+    <div id="stale-results" class="notice stale hidden" role="status" aria-live="polite">输入或规则已改变，先前结果和下载已失效。请重新核对。</div>
+    <section id="comparison-results" class="hidden" aria-labelledby="results-heading">
+      <div class="section-heading result-heading"><div><p class="eyebrow">03 / 查看结果</p><h2 id="results-heading">每一项差异，都有出处。</h2><p id="result-context"></p></div><span id="result-outcome" class="tag"></span></div>
+      <div class="summary-grid">
+        <div class="stat-card total"><span>字段检查</span><strong id="count-total">0</strong><small>不是交易数或金额汇总</small></div>
+        <div class="stat-card"><span>容差内</span><strong id="count-matched">0</strong><small>数值差异在允许范围内</small></div>
+        <div class="stat-card"><span>超出容差</span><strong id="count-different">0</strong><small>需要解释的数值差异</small></div>
+        <div class="stat-card"><span>无对应行</span><strong id="count-unpaired">0</strong><small>仅存在于左表或右表</small></div>
+        <div class="stat-card"><span>比较受阻</span><strong id="count-blocked">0</strong><small>键、公式、数值或币种问题</small></div>
+      </div>
+      <div class="coverage-strip"><span id="coverage-left"></span><span id="coverage-right"></span><span>一个键对可产生多个字段检查。</span></div>
+      <section class="panel results-panel">
+        <div class="panel-heading"><div><h3>逐字段明细</h3><p>原值、精确键与源行号均保留。差额为“右表 − 左表”。</p></div></div>
+        <div class="result-toolbar">
+          <label class="field search-field">搜索<input id="result-search" type="search" placeholder="键、列名、原值或原因"></label>
+          <label class="field">检查状态<select id="status-filter"><option value="all">全部状态</option></select></label>
+          <label class="field">来源范围<select id="source-filter"><option value="all">全部来源</option><option value="left">涉及左表</option><option value="right">涉及右表</option><option value="paired">两侧已配对</option><option value="unpaired">仅一侧有源行</option></select></label>
+          <label class="field page-size-field">每页<select id="page-size"><option value="25">25 项</option><option value="50">50 项</option><option value="100">100 项</option></select></label>
+        </div>
+        <div class="table-meta"><span id="visible-count"></span><span>宽表可横向滚动，查看右侧差額与说明 <span aria-hidden="true">↔</span></span></div>
+        <div class="table-wrap results-table-wrap" tabindex="0" aria-label="逐字段结果表，可横向滚动"><table id="results-table"><thead><tr><th scope="col">状态</th><th scope="col">精确组合键</th><th scope="col">对应数值列</th><th scope="col">左表原值 / 源行</th><th scope="col">右表原值 / 源行</th><th scope="col">右 − 左</th><th scope="col">绝对差额</th><th scope="col">允许差额</th><th scope="col">原因与说明</th></tr></thead><tbody></tbody></table></div>
+        <div class="pagination"><span id="page-label"></span><div><button id="prev-page" class="button button-small" type="button">上一页</button><button id="next-page" class="button button-small" type="button">下一页</button></div></div>
+      </section>
+      <details class="panel provenance-panel"><summary>本次来源、映射与比较规则</summary><div id="run-provenance"></div><p class="field-help">文件哈希可以核对是否为同一份内容，不能证明来源真实性、业务含义或数据正确性。</p></details>
+      <div class="download-bar"><div><h3>把完整证据留在手边。</h3><p>包含全部结果；页面筛选不会改变报告或证据包。</p><small>结果最多临时保留 3 次、总计约 128 MiB、最长 60 分钟；服务重启即清空。</small></div><div class="download-actions"><button id="download-report" class="button" type="button" disabled>查看报告 <span aria-hidden="true">↗</span></button><button id="download-zip" class="button button-primary" type="button" disabled>下载完整证据包 <span aria-hidden="true">↓</span></button></div></div>
+    </section>
+    <footer class="app-footer"><span>Financial Control Tower <span id="app-version"></span></span><span>逐项比较 · 明確规则 · 保留原件</span><span>本机处理，不连接外部分析服务</span></footer>
+  </main>
+</body>
+</html>
