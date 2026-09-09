@@ -25,6 +25,7 @@ CACHE_SECONDS = 3600
 ASSETS = {
     "/": ("index.html", "text/html; charset=utf-8"),
     "/static/app.js": ("app.js", "text/javascript; charset=utf-8"),
+    "/static/suggestions.js": ("suggestions.js", "text/javascript; charset=utf-8"),
     "/static/styles.css": ("styles.css", "text/css; charset=utf-8"),
 }
 DOWNLOADS = {

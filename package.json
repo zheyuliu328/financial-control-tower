@@ -1,8 +1,17 @@
 {
   "name": "fct-browser-checks",
   "private": true,
-  "version": "2.2.0",
-  "description": "Browser acceptance checks; not a runtime dependency",
-  "scripts": {"test:browser": "node tests/browser-ui.cjs"},
-  "devDependencies": {"playwright": "1.62.1"}
+  "version": "2.3.0",
+  "description": "Static browser app and browser acceptance checks",
+  "scripts": {
+    "test:browser": "node tests/browser-ui.cjs",
+    "build:web": "python3 scripts/build_web.py",
+    "test:suggestions": "node --test tests/test_suggestions.cjs",
+    "test:web-runtime": "node tests/web-runtime.cjs",
+    "test:public-browser": "node tests/browser-web.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1",
+    "pyodide": "314.0.6"
+  }
 }

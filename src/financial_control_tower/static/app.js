@@ -23,6 +23,7 @@
   const BLOCKED = new Set(["missing_key", "invalid_key", "duplicate_key", "invalid_numeric", "formula_cell", "invalid_currency", "currency_mismatch"]);
   const state = {
     config: null, ready: false, busy: false, operation: "", revision: 0, run: null, stale: false,
+    step: "files", example: false, suggestionFor: "", advice: "",
     left: source("left"), right: source("right"),
     keys: [{left: "", right: ""}], values: [{left: "", right: ""}],
     unitMode: "currency", commonUnit: "", currencies: {left: "", right: ""},
@@ -63,13 +64,65 @@
     const item = state[side];
     return item.loading || item.headerDirty || item.error || !item.meta ? [] : item.meta.headers || [];
   }
+  function filesReady() {
+    return ["left", "right"].every(function (side) { return activeHeaders(side).length > 0 && !state[side].meta.selection_required; });
+  }
+  function suggestMappings() {
+    if (!filesReady() || state.example) return;
+    const fingerprint = JSON.stringify(["left", "right"].map(function (side) {
+      const meta = state[side].meta; return [meta.sha256, meta.sheet, meta.header_row];
+    }));
+    if (state.suggestionFor === fingerprint) return;
+    state.suggestionFor = fingerprint;
+    const suggestion = window.FctSuggestions.suggest(state.left.meta, state.right.meta);
+    if (state.keys.length === 1 && !state.keys[0].left && !state.keys[0].right && suggestion.keys.length) state.keys = suggestion.keys;
+    if (state.values.length === 1 && !state.values[0].left && !state.values[0].right && suggestion.values.length) state.values = suggestion.values;
+    ["left", "right"].forEach(function (side) { if (!state.currencies[side]) state.currencies[side] = suggestion.currencies[side] || ""; });
+    const any = suggestion.keys.length || suggestion.values.length || suggestion.currencies.left || suggestion.currencies.right;
+    state.advice = (any ? "已按列名填写建议，请确认对应关系；不合适可直接改。" : "这些列名没有明确的对应建议，请先选编号列，再选要比较的数字列。") + " " + (suggestion.warnings || []).join(" ");
+    renderMappings();
+  }
+  function go(step) {
+    if (!state.ready || state.busy || state.left.loading || state.right.loading) return;
+    if (step === "mapping" && !filesReady()) { message("先完成两份文件的读取，再确认对应列。", true); return; }
+    if (step === "results" && !state.run) return;
+    if (step === "mapping") suggestMappings();
+    state.step = step; clearMessage(); update();
+    const heading = $(step === "files" ? "sources-heading" : step === "mapping" ? "mapping-heading" : "results-heading");
+    heading.focus({preventScroll: true}); heading.scrollIntoView({block: "start", behavior: "smooth"});
+  }
+  function ownFiles() {
+    if (state.busy) return;
+    state.example = false; state.left = source("left"); state.right = source("right");
+    state.keys = [{left: "", right: ""}]; state.values = [{left: "", right: ""}];
+    state.currencies = {left: "", right: ""}; state.commonUnit = ""; state.unitMode = "currency";
+    state.absolute = "0"; state.relative = "0"; state.suggestionFor = ""; state.advice = ""; state.step = "files";
+    $("absolute-tolerance").value = "0"; $("relative-tolerance").value = "0"; $("common-unit").value = "";
+    $("unit-mode-currency").checked = true; $("unit-mode-common").checked = false; $("tolerance-options").open = false;
+    invalidate(); state.stale = false; renderSource("left"); renderSource("right"); renderMappings(); go("files");
+  }
   function clearMessage() { $("error").classList.add("hidden"); $("app-status").classList.add("hidden"); }
   function message(value, error) {
     clearMessage(); const host = $(error ? "error" : "app-status");
     host.textContent = value; host.classList.remove("hidden");
     if (error) host.scrollIntoView({behavior: "smooth", block: "center"});
   }
+  function inputError(detail) {
+    const width = detail.match(/^row (\d+) has a different width from its header$/);
+    if (width) return "第 " + width[1] + " 行的列数与当前表头不一致。请先确认列名所在行，再重新读取。";
+    const translations = {
+      "header cells must be nonempty text; formulas and blank headers are rejected": "表头包含空列名或公式。请选择正确的列名行，或补全源文件中的列名。",
+      "duplicate column headers are rejected before parsing": "表头存在重复列名。请在源文件中区分这些列，再重新选择文件。",
+      "selected header row does not exist": "文件中没有这一行，请检查表头行号。",
+      "table contains no nonempty data rows; an empty comparison cannot pass": "表头下没有数据，请检查工作表和表头行号。",
+      "input exceeds the 200-column limit": "列数超过 200 列，请缩小数据范围。",
+      "expected a finite decimal number without grouping separators": "请填写有效数字，不要包含千位分隔符。",
+      "tolerances must be nonnegative; relative tolerance is a fraction, not percent": "容差不能为负数；相对容差填写比例，例如 0.01 表示 1%。"
+    };
+    return translations[detail] || detail;
+  }
   async function request(url, payload) {
+    if (window.FctBrowser) return window.FctBrowser.request(url, payload);
     let response;
     try {
       response = await fetch(url, {
@@ -86,6 +139,7 @@
   function invalidate() {
     state.revision += 1;
     state.stale = Boolean(state.run || state.stale);
+    if (state.run && window.FctBrowser) window.FctBrowser.discard();
     state.run = null;
     $("results-table").querySelector("tbody").replaceChildren();
     $("run-provenance").replaceChildren();
@@ -96,13 +150,29 @@
     $("input-fields").disabled = !state.ready || state.busy;
     $("load-example").disabled = !state.ready || state.busy || reading;
     $("run-compare").disabled = !state.ready || state.busy || reading || state.left.headerDirty || state.right.headerDirty;
-    $("run-compare").textContent = state.busy && state.operation === "compare" ? "正在逐项核对…" : "开始核对 →";
-    $("comparison-results").classList.toggle("hidden", !state.run);
+    $("run-compare").textContent = state.busy && state.operation === "compare" ? "正在逐项核对…" : "确认并开始核对";
+    if (state.step === "results" && !state.run) state.step = filesReady() ? "mapping" : "files";
+    $("comparison-form").classList.toggle("hidden", state.step === "results");
+    $("files-stage").classList.toggle("hidden", state.step !== "files");
+    $("mapping-stage").classList.toggle("hidden", state.step !== "mapping");
+    $("comparison-results").classList.toggle("hidden", !state.run || state.step !== "results");
+    ["files", "mapping", "results"].forEach(function (step) {
+      const control = $("step-" + step);
+      control.disabled = !state.ready || state.busy || reading || (step === "mapping" && !filesReady()) || (step === "results" && !state.run);
+      if (step === state.step) control.setAttribute("aria-current", "step"); else control.removeAttribute("aria-current");
+    });
+    $("files-next").disabled = !state.ready || state.busy || !filesReady();
+    $("files-next-hint").textContent = reading ? "正在读取文件…" : filesReady() ? "两份文件已就绪。下一步确认对应列。" : !state.left.file && !state.right.file ? "还没有文件？可以先点右上角的“试用示例”。" : "请完成" + ["left", "right"].filter(function (side) { return !activeHeaders(side).length; }).map(sideName).join("和") + "的文件、工作表或表头选择。";
+    $("selected-files-summary").textContent = ["left", "right"].map(function (side) { return state[side].file ? state[side].file.name : ""; }).join(" ↔ ");
+    $("mapping-advice").textContent = state.advice || "请确认左右所选列代表同一含义，全部数值使用同一单位。";
+    $("tolerance-summary").textContent = state.absolute.trim() === "0" && state.relative.trim() === "0" ? "当前：不忽略任何差异" : "当前：绝对容差 " + state.absolute + "；相对容差 " + state.relative;
+    $("example-guide").classList.toggle("hidden", !state.example);
     $("stale-results").classList.toggle("hidden", !state.stale || Boolean(state.run));
     $("download-report").disabled = state.busy || reading || !state.run;
     $("download-zip").disabled = state.busy || reading || !state.run;
-    $("download-zip").textContent = state.busy && state.operation === "zip" ? "正在准备下载…" : "下载完整证据包 ↓";
-    $("download-report").textContent = state.busy && state.operation === "report" ? "正在打开报告…" : "查看报告 ↗";
+    $("download-csv").disabled = state.busy || reading || !state.run;
+    $("download-zip").textContent = state.busy && state.operation === "zip" ? "正在准备下载…" : "下载结果与原表（ZIP）";
+    $("download-report").textContent = state.busy && state.operation === "report" ? "正在准备报告…" : window.FctBrowser ? "下载报告（HTML）" : "查看报告 ↗";
     $("add-key").disabled = state.keys.length >= 200 || reading;
     $("add-value").disabled = state.values.length >= 200 || reading;
     $("currency-fields").classList.toggle("hidden", state.unitMode !== "currency");
@@ -144,14 +214,29 @@
     const header = el("input", {id: side + "-header-row", type: "number", min: 1, step: 1, value: item.header_row, disabled: !item.file || item.loading,
       oninput: function (event) { item.header_row = Number(event.target.value); item.headerDirty = true; invalidate(); },
       onchange: function () { if (!item.loading) inspect(side); }});
-    body.appendChild(el("div", {className: "file-selection"}, [field("工作表", sheet), field("表头行号", header)]));
-    if (item.file) body.appendChild(el("div", {className: "source-inspect-actions"}, button("重新读取表头 ↻", function () { if (!item.loading) inspect(side); }, {id: side + "-read-header", className: "text-button", disabled: item.loading})));
+    if (item.file && !isCsv && item.sheets.length > 1) body.appendChild(field("选择需要核对的工作表", sheet));
+    if (item.file) {
+      const options = el("details", {id: side + "-read-options", className: "read-options", open: Boolean(item.error) || item.headerDirty}, [
+        el("summary", {}, "列名没读对？调整表头行"),
+        el("p", {className: "field-help"}, "表头行就是写着列名的那一行。例如前两行是标题，列名在第三行，就填 3。"),
+        field("列名所在行", header),
+        button("重新读取表头", function () { if (!item.loading) inspect(side); }, {id: side + "-read-header", disabled: item.loading})
+      ]);
+      body.appendChild(options);
+    }
     if (item.loading) body.appendChild(el("p", {className: "source-message", role: "status"}, "正在读取所选文件与表头…"));
     if (item.error) body.appendChild(el("p", {className: "source-message error", role: "status"}, item.error));
     if (meta && meta.selection_required) body.appendChild(el("p", {className: "source-message selection"}, "文件中有多个工作表。请明确选择需要比较的那一张。"));
     if (meta) {
+      if (meta.headers && meta.headers.length) body.appendChild(el("div", {className: "quick-preview"}, [
+        el("p", {className: "field-help"}, "已读取 " + meta.data_rows + " 行 · " + meta.headers.length + " 列" + (meta.sheet ? " · " + meta.sheet : "") + "。先看看是不是你要的表："),
+        el("div", {className: "table-wrap", tabindex: "0", "aria-label": sideName(side) + "前两行预览"}, el("table", {}, [
+          el("thead", {}, el("tr", {}, meta.headers.slice(0, 4).map(function (name) { return el("th", {}, name); }))),
+          el("tbody", {}, (meta.preview || []).slice(0, 2).map(function (row) { return el("tr", {}, row.values.slice(0, 4).map(function (value) { return el("td", {}, exact(value)); })); }))
+        ]))
+      ]));
       const details = el("details", {id: side + "-details", className: "source-details"}, [
-        el("summary", {}, "查看预览、源行与文件哈希"),
+        el("summary", {}, "查看完整列名、源行和文件详情"),
         el("dl", {className: "source-metadata"}, [
           el("dt", {}, "原文件"), el("dd", {}, meta.filename || (item.file && item.file.name) || ""),
           el("dt", {}, "SHA-256"), el("dd", {}, el("code", {id: side + "-sha256"}, meta.sha256 || "—")),
@@ -190,8 +275,9 @@
   async function readFile(side, file) {
     const item = state[side];
     item.epoch += 1; const epoch = item.epoch;
+    state.example = false; state.suggestionFor = ""; state.advice = "";
     item.file = null; item.sheet = null; item.header_row = 1; item.meta = null; item.sheets = []; item.error = ""; item.headerDirty = false; item.loading = false;
-    state.keys.concat(state.values).forEach(function (pair) { pair[side] = ""; }); state.currencies[side] = "";
+    state.keys = [{left: "", right: ""}]; state.values = [{left: "", right: ""}]; state.currencies[side] = "";
     invalidate();
     if (!/\.(csv|xlsx)$/i.test(file.name)) { item.error = "仅支持 UTF-8 CSV 和 .xlsx 文件。"; renderSource(side); renderMappings(); return; }
     if (file.size > state.config.max_file_bytes) { item.error = "文件超过 " + Math.round(state.config.max_file_bytes / 1048576) + " MiB，请使用较小的数据摘录。"; renderSource(side); renderMappings(); return; }
@@ -222,7 +308,7 @@
       const headers = meta.headers || [];
       state.keys.concat(state.values).forEach(function (pair) { if (pair[side] && !headers.includes(pair[side])) pair[side] = ""; });
       if (state.currencies[side] && !headers.includes(state.currencies[side])) state.currencies[side] = "";
-    } catch (error) { if (epoch === item.epoch) { item.error = error.message; item.meta = null; } }
+    } catch (error) { if (epoch === item.epoch) { item.error = inputError(error.message); item.meta = null; } }
     finally { if (epoch === item.epoch) { item.loading = false; renderSource(side); renderMappings(); } }
   }
   function validate() {
@@ -268,11 +354,11 @@
       const run = await request("/api/compare", data);
       if (state.revision !== revision) throw new Error("核对期间输入已改变，请使用当前输入重新核对。");
       if (!run.run_id || !run.result || !Array.isArray(run.result.records) || !run.downloads) throw new Error("本机服务返回的核对结果不完整，请重试。");
-      state.run = run; state.stale = false; state.search = ""; state.status = "all"; state.sourceFilter = "all"; state.page = 0;
+      state.run = run; state.stale = false; state.step = "results"; state.search = ""; state.status = run.result.summary.all_matched ? "all" : "attention"; state.sourceFilter = "all"; state.page = 0;
       renderResults();
       message(run.result.summary.all_matched ? "核对完成：所有字段检查均在容差内。原值和源行可在下方追溯。" : "核对完成：存在差异、无对应行或受阻字段，请查看下方明细。", false);
-      $("comparison-results").scrollIntoView({behavior: "smooth", block: "start"});
-    } catch (error) { message(error.message, true); }
+      $("results-heading").focus({preventScroll: true}); $("comparison-results").scrollIntoView({behavior: "smooth", block: "start"});
+    } catch (error) { message(inputError(error.message), true); }
     finally { state.busy = false; state.operation = ""; update(); }
   }
   function renderResults() {
@@ -287,10 +373,12 @@
     $("result-context").textContent = name("left") + " ↔ " + name("right") + " · " + state.values.length + " 组数值字段";
     $("result-outcome").textContent = summary.all_matched ? "字段全部在容差内" : "有待查看的例外";
     $("result-outcome").className = "tag " + (summary.all_matched ? "good" : "warning");
-    $("status-filter").replaceChildren(el("option", {value: "all"}, "全部状态（" + result.records.length + "）"));
+    const attention = result.records.length - (counts.matched || 0);
+    $("result-guidance").textContent = summary.all_matched ? "本次所选字段均在容差内。你可以下载报告留存；这不代表两份文件之外的数据也完整。" : "有 " + attention + " 项需要处理。下方先显示这些项目：按原值和源行定位，检查遗漏、重复和币种，再解释数值差异。也可切换到全部状态。";
+    $("status-filter").replaceChildren(el("option", {value: "attention"}, "需要处理（" + attention + "）"), el("option", {value: "all"}, "全部状态（" + result.records.length + "）"));
     Object.keys(LABELS).forEach(function (status) { $("status-filter").appendChild(el("option", {value: status}, LABELS[status] + "（" + (counts[status] || 0) + "）")); });
     Object.keys(counts).filter(function (status) { return !LABELS[status]; }).forEach(function (status) { $("status-filter").appendChild(el("option", {value: status}, status + "（" + counts[status] + "）")); });
-    $("result-search").value = ""; $("source-filter").value = "all"; $("status-filter").value = "all";
+    $("result-search").value = ""; $("source-filter").value = "all"; $("status-filter").value = state.status;
     renderRecords(); renderProvenance(); update();
   }
   function hasRow(record, side) { return record[side + "_row"] !== null && record[side + "_row"] !== undefined; }
@@ -298,7 +386,8 @@
     if (!state.run) return;
     const all = state.run.result.records, search = state.search.toLocaleLowerCase();
     const filtered = all.filter(function (record) {
-      if (state.status !== "all" && state.status !== record.status) return false;
+      if (state.status === "attention" && record.status === "matched") return false;
+      if (state.status !== "all" && state.status !== "attention" && state.status !== record.status) return false;
       const left = hasRow(record, "left"), right = hasRow(record, "right");
       if (state.sourceFilter === "left" && !left) return false;
       if (state.sourceFilter === "right" && !right) return false;
@@ -349,7 +438,7 @@
     ]));
   }
   function runUrl(run, kind) {
-    const route = run.downloads[kind], url = new URL(route, window.location.origin);
+    const route = run.downloads[kind] || (kind === "differences.csv" ? "/api/runs/" + encodeURIComponent(run.run_id) + "/differences.csv" : ""), url = new URL(route, window.location.origin);
     const expected = "/api/runs/" + encodeURIComponent(run.run_id) + "/" + kind;
     if (url.origin !== window.location.origin || url.pathname !== expected || url.search || url.hash) throw new Error("结果下载地址与当前运行不一致，请重新核对。");
     return url.href;
@@ -360,6 +449,15 @@
     clearMessage(); state.busy = true; state.operation = kind; update();
     try {
       const url = runUrl(run, kind);
+      if (window.FctBrowser) {
+        const file = await window.FctBrowser.file(run.run_id, kind);
+        if (revision !== state.revision || state.run !== run) throw new Error("输入已改变，请重新核对后下载。");
+        const link = el("a", {href: URL.createObjectURL(new Blob([file.bytes], {type: file.mime})), download: file.name, className: "hidden"}, "下载");
+        document.body.appendChild(link); link.click(); link.remove();
+        window.setTimeout(function () { URL.revokeObjectURL(link.href); }, 60000);
+        message("已准备下载。报告和差异表可离线打开。", false);
+        return;
+      }
       if (kind === "report") {
         reportWindow = window.open("about:blank", "_blank");
         if (!reportWindow) throw new Error("浏览器阻止了报告新标签页。请允许本机工作区打开新标签页后重试。");
@@ -389,7 +487,7 @@
         const blob = await response.blob();
         if (revision !== state.revision || state.run !== run) throw new Error("输入已改变，请重新核对后下载。");
         const objectUrl = URL.createObjectURL(blob);
-        const link = el("a", {href: objectUrl, download: "双表核对-完整证据包.zip", className: "hidden"}, "下载证据包");
+        const link = el("a", {href: objectUrl, download: kind === "differences.csv" ? "表格对账-差异表.csv" : "表格对账-结果与原表.zip", className: "hidden"}, "下载证据包");
         document.body.appendChild(link); link.click(); link.remove();
         window.setTimeout(function () { URL.revokeObjectURL(objectUrl); }, 60000);
         message("完整证据包已准备下载，包含本次全部字段结果、原始输入副本和文件清单。", false);
@@ -401,9 +499,12 @@
   }
   async function loadExample() {
     if (state.busy || state.left.loading || state.right.loading) return;
-    invalidate(); state.busy = true; state.operation = "example"; update();
+    invalidate(); state.example = true; state.suggestionFor = ""; state.busy = true; state.operation = "example"; update();
+    let loaded = false;
+    const exampleRevision = state.revision;
     try {
       const data = await request("/api/example");
+      if (state.revision !== exampleRevision) return;
       state.keys = data.left.keys.map(function (name, index) { return {left: name, right: data.right.keys[index] || ""}; });
       state.values = data.left.values.map(function (name, index) { return {left: name, right: data.right.values[index] || ""}; });
       state.absolute = String(data.absolute_tolerance); state.relative = String(data.relative_tolerance);
@@ -416,15 +517,24 @@
         const incoming = data[side], item = source(side);
         item.file = incoming.file; item.sheet = incoming.sheet || null; item.header_row = incoming.header_row || 1;
         state[side] = item; renderSource(side); await inspect(side);
+        if (state.revision !== exampleRevision) return;
       }
       renderMappings();
-      message("自造示例已载入，尚未比较。请确认字段与单位后点击“开始核对”。" + (state.unitMode === "common" ? "示例没有币种列，请自行确认并填写共同单位。" : ""), false);
-    } catch (error) { message(error.message, true); }
+      state.advice = "这是虚构示例预设的对应关系和容差。你的文件需要自行确认这些含义。";
+      loaded = filesReady() && state.unitMode === "currency";
+      if (!loaded) message("请先完成示例文件的读取和共同单位声明。", true);
+    } catch (error) { message(inputError(error.message), true); }
     finally { state.busy = false; state.operation = ""; update(); }
+    if (loaded && state.revision === exampleRevision) await compare();
   }
   function bind() {
     $("comparison-form").addEventListener("submit", function (event) { event.preventDefault(); compare(); });
     $("load-example").addEventListener("click", loadExample);
+    $("files-next").addEventListener("click", function () { go("mapping"); });
+    $("back-files").addEventListener("click", function () { go("files"); });
+    $("edit-comparison").addEventListener("click", function () { go("mapping"); });
+    $("use-own-files").addEventListener("click", ownFiles);
+    ["files", "mapping", "results"].forEach(function (step) { $("step-" + step).addEventListener("click", function () { go(step); }); });
     [["add-key", "keys"], ["add-value", "values"]].forEach(function (pair) { $(pair[0]).addEventListener("click", function () { if (state[pair[1]].length < 200) { state[pair[1]].push({left: "", right: ""}); invalidate(); renderMappings(); } }); });
     ["left", "right"].forEach(function (side) { $(side + "-currency").addEventListener("change", function (event) { state.currencies[side] = event.target.value; invalidate(); }); });
     ["currency", "common"].forEach(function (mode) { $("unit-mode-" + mode).addEventListener("change", function (event) { if (event.target.checked) { state.unitMode = mode; invalidate(); } }); });
@@ -437,6 +547,13 @@
     $("page-size").addEventListener("change", function (event) { state.pageSize = Number(event.target.value); state.page = 0; renderRecords(); });
     $("prev-page").addEventListener("click", function () { state.page -= 1; renderRecords(); });
     $("next-page").addEventListener("click", function () { state.page += 1; renderRecords(); });
+    $("download-csv").addEventListener("click", function () { download("differences.csv"); });
+    $("cancel-operation").addEventListener("click", function () { if (window.FctBrowser) window.FctBrowser.cancel(); });
+    window.addEventListener("fct-runtime-reset", function () { invalidate(); });
+    window.addEventListener("fct-runtime-progress", function (event) {
+      $("runtime-progress").classList.toggle("hidden", !event.detail.active);
+      $("runtime-message").textContent = event.detail.message || "";
+    });
     $("download-report").addEventListener("click", function () { download("report"); });
     $("download-zip").addEventListener("click", function () { download("zip"); });
   }
@@ -444,9 +561,10 @@
     bind(); renderSource("left"); renderSource("right"); renderMappings();
     try {
       const config = await request("/api/config");
-      if (!config.csrf_token || !config.max_file_bytes) throw new Error("本机工作区配置不完整，请重新启动。");
+      if ((!window.FctBrowser && !config.csrf_token) || !config.max_file_bytes) throw new Error("本机工作区配置不完整，请重新启动。");
       state.config = config; state.ready = true; $("app-version").textContent = config.version ? "· v" + config.version : "";
-      renderSource("left"); renderSource("right"); update(); message("本机工作区已就绪。选择两份文件，或载入自造示例。", false);
+      if (window.FctBrowser) $("download-report").title = "下载 HTML 报告，在浏览器中打开";
+      renderSource("left"); renderSource("right"); update(); clearMessage();
     } catch (error) { message(error.message, true); }
   }
   start();

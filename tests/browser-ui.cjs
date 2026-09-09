@@ -96,6 +96,7 @@ const {chromium} = require("playwright");
       }
       await ready(`#${side}-header-row`);
       if (await page.locator(`#${side}-header-row`).inputValue() !== String(definition.header_row)) {
+        if (await page.locator(`#${side}-read-options`).getAttribute("open") === null) await page.locator(`#${side}-read-options > summary`).click();
         await page.locator(`#${side}-header-row`).fill(String(definition.header_row));
         inspected = await post("/api/inspect", () => page.locator(`#${side}-header-row`).press("Tab"));
       }
@@ -107,6 +108,9 @@ const {chromium} = require("playwright");
     }
     async function mappings(scenario) {
       const wanted = expected[scenario];
+      await page.locator("#files-next").click();
+      assert(await page.locator("#mapping-stage").isVisible());
+      assert.equal(await page.locator("#files-stage").isVisible(), false);
       while (await page.locator('[id^="key-left-"]').count() < 2) await page.locator("#add-key").click();
       while (await page.locator('[id^="value-left-"]').count() < 2) await page.locator("#add-value").click();
       for (const side of ["left", "right"]) {
@@ -124,6 +128,7 @@ const {chromium} = require("playwright");
         await page.locator("#left-currency").selectOption(wanted.left.currency);
         await page.locator("#right-currency").selectOption(wanted.right.currency);
       }
+      if (await page.locator("#tolerance-options").getAttribute("open") === null) await page.locator("#tolerance-options > summary").click();
       await page.locator("#absolute-tolerance").fill(wanted.absolute_tolerance);
       await page.locator("#relative-tolerance").fill(wanted.relative_tolerance);
     }
@@ -193,14 +198,18 @@ const {chromium} = require("playwright");
     // Re-inspecting unchanged inputs keeps the result but temporarily disables exports.
     routeGate = {endpoint: "/api/inspect", promise: new Promise(resolve => { releaseGate = resolve; })};
     const rereadResponse = page.waitForResponse(response => response.url() === base + "/api/inspect");
+    await page.locator("#step-files").click();
+    await page.locator("#left-read-options > summary").click();
     await page.locator("#left-read-header").click();
     assert(await page.locator("#download-report").isDisabled());
     assert(await page.locator("#download-zip").isDisabled());
-    assert(await page.locator("#comparison-results").isVisible());
+    assert.equal(await page.locator("#comparison-results").isVisible(), false);
     assert.equal(await page.locator("#stale-results").isVisible(), false);
     releaseGate(); releaseGate = null; routeGate = null;
     assert.equal((await rereadResponse).status(), 200);
     await ready("#download-report"); await ready("#download-zip");
+    await page.locator("#step-results").click();
+    await page.locator("#status-filter").selectOption("all");
     await page.locator("#page-size").selectOption("100");
     await visibleRows(28);
     assert.equal(await page.locator("#results-table img").count(), 0, "Literal key became executable markup");
@@ -234,6 +243,7 @@ const {chromium} = require("playwright");
     const currencyOffline = await exportRun(currency, "currency");
 
     // An edit followed by restoring the same value still retires the previous run.
+    await page.locator("#edit-comparison").click();
     await page.locator("#absolute-tolerance").fill("0.10"); await retired();
     await page.locator("#absolute-tolerance").fill("0.05"); await retired();
     await compare("currency", "-explicit-rerun");
@@ -241,9 +251,10 @@ const {chromium} = require("playwright");
     // Observe retirement while a new file's inspection is deliberately still pending.
     routeGate = {endpoint: "/api/inspect", promise: new Promise(resolve => { releaseGate = resolve; })};
     const replacedResponse = page.waitForResponse(response => response.url() === base + "/api/inspect");
+    await page.locator("#step-files").click();
     await page.locator("#right-file").setInputFiles(path.join(output, expected.unit.right.name));
     await retired();
-    assert(await page.locator("#right-sheet").isDisabled());
+    assert.equal(await page.locator("#right-sheet").count(), 0, "CSV must not show a worksheet selector");
     assert(await page.locator("#right-header-row").isDisabled());
     assert(await page.locator("#key-left-0").isDisabled());
     releaseGate(); releaseGate = null; routeGate = null;

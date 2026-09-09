@@ -4,38 +4,41 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>双表核对 · Financial Control Tower</title>
+  <title>表格对账</title>
   <link rel="stylesheet" href="/static/styles.css">
+  <script src="/static/suggestions.js" defer></script>
   <script src="/static/app.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">跳到工作区</a>
   <header class="app-header">
-    <a class="brand" href="/" aria-label="双表核对首页"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>双表核对<small>FINANCIAL CONTROL TOWER</small></span></a>
-    <div class="header-actions"><span class="local-badge"><span></span> 本机处理</span><button id="load-example" class="text-button" type="button" disabled>载入示例 <span aria-hidden="true">↗</span></button></div>
+    <a class="brand" href="/" aria-label="表格对账首页">表格对账</a>
+    <div class="header-actions"><span class="local-badge"><span></span> 本机处理</span><button id="load-example" class="button" type="button" disabled>试用示例</button></div>
   </header>
   <main id="main">
-    <section class="intro">
-      <div><p class="eyebrow">从两份文件，到每一项差异</p><h1>逐项核对，<span>让差异可追溯。</span></h1><p class="lead">选择左右两张表，指定哪些列对应同一条数据、哪些数值需要核对。查看原值、差额和未能比较的原因。</p></div>
-      <aside class="local-note"><span aria-hidden="true">↳</span><div><strong>文件留在这台电脑上。</strong><p>只连接本机服务，不改写原文件。结果需要留存时，请下载证据包。</p></div></aside>
-    </section>
-    <nav class="journey" aria-label="核对步骤"><a href="#sources-heading"><span>01</span> 选择文件<small>确定工作表与表头</small></a><a href="#mapping-heading"><span>02</span> 对应字段<small>说明键、数值和单位</small></a><a href="#results-anchor"><span>03</span> 查看差异<small>保留每一个字段检查</small></a></nav>
+    <nav class="journey" aria-label="核对步骤"><button id="step-files" type="button" aria-current="step"><span>1</span> 选两份表</button><button id="step-mapping" type="button" disabled><span>2</span> 确认对应列</button><button id="step-results" type="button" disabled><span>3</span> 看差异</button></nav>
     <div id="app-status" class="notice" role="status" aria-live="polite">正在连接本机工作区…</div>
+    <div id="runtime-progress" class="notice hidden" role="status"><span id="runtime-message"></span> <button id="cancel-operation" class="text-button" type="button">取消</button></div>
     <div id="error" class="notice error hidden" role="alert"></div>
     <form id="comparison-form" novalidate>
       <fieldset id="input-fields" class="input-fields" disabled>
-        <div class="section-heading"><div><p class="eyebrow">01 / 选择数据</p><h2 id="sources-heading">左右两张表，从原文件开始。</h2></div><span class="tag">CSV / XLSX</span></div>
+        <section id="files-stage" aria-labelledby="sources-heading">
+        <div class="section-heading"><div><h1 id="sources-heading" tabindex="-1">选择两份表格</h1><p>找出两份表中的数值差异、遗漏和重复记录。支持 CSV、Excel（.xlsx）。</p></div></div>
         <div class="source-grid"><div id="left-source"></div><div id="right-source"></div></div>
-        <div class="section-heading mapping-heading"><div><p class="eyebrow">02 / 定义比较规则</p><h2 id="mapping-heading">哪些列，代表同一件事？</h2><p>每行左、右列按顺序对应；列名可以不同。</p></div></div>
+        <div class="wizard-actions"><p id="files-next-hint" role="status">先选择两份文件。</p><button id="files-next" class="button button-primary" type="button" disabled>下一步：确认对应列</button></div>
+        </section>
+        <section id="mapping-stage" class="hidden" aria-labelledby="mapping-heading">
+        <div class="section-heading mapping-heading"><div><h2 id="mapping-heading" tabindex="-1">确认对应列</h2><p id="selected-files-summary"></p></div><button id="back-files" class="text-button" type="button">返回选文件</button></div>
+        <div id="mapping-advice" class="notice" role="status"></div>
         <div class="mapping-grid">
           <section class="panel">
-            <div class="panel-heading"><div><h3>记录键 <span class="small-tag">可组合</span></h3><p>例如“账户编号＋交易编号”，共同确定一条数据。</p></div><button id="add-key" class="button button-small" type="button">＋ 添加键</button></div>
+            <div class="panel-heading"><div><h3>用于匹配记录的列</h3><p>通常是交易编号、订单号等，不是金额。</p></div><button id="add-key" class="button button-small" type="button">再加一列编号</button></div>
             <div class="pair-column-heading" aria-hidden="true"><span>左表列</span><span>右表列</span><span></span></div>
             <div id="key-pairs"></div>
-            <p class="field-help">按原样匹配文本，保留前导零、空格和大小写。重复键不会被随意配对或加总。</p>
+            <p class="field-help">若单列不够，用“再加一列编号”组合匹配。重复或不明确的编号会单独提示。</p>
           </section>
           <section class="panel">
-            <div class="panel-heading"><div><h3>数值字段 <span class="small-tag">可多组</span></h3><p>每一对数值列，产生一项独立的字段检查。</p></div><button id="add-value" class="button button-small" type="button">＋ 添加数值</button></div>
+            <div class="panel-heading"><div><h3>需要比较的数值列</h3><p>例如余额对应余额、应收金额对应应收金额。</p></div><button id="add-value" class="button button-small" type="button">再比一列数字</button></div>
             <div class="pair-column-heading" aria-hidden="true"><span>左表列</span><span>右表列</span><span></span></div>
             <div id="value-pairs"></div>
             <p class="field-help">下方单位与容差适用于全部数值字段；请选择单位和核对规则相同的字段。</p>
@@ -43,7 +46,7 @@
         </div>
         <div class="rules-grid">
           <section class="panel unit-panel">
-            <h3>先确定数值能否比较。</h3><p class="panel-description">逐行核对币种，或明确声明全部数值使用同一单位。</p>
+            <h3>数值单位</h3><p class="panel-description">有币种列就逐行核对；没有则填写双方共同使用的单位。</p>
             <div class="unit-choices" role="group" aria-label="单位声明方式">
               <label class="radio-label"><input id="unit-mode-currency" name="unit-mode" type="radio" value="currency" checked><span>两侧都有币种列</span></label>
               <label class="radio-label"><input id="unit-mode-common" name="unit-mode" type="radio" value="common"><span>声明共同单位</span></label>
@@ -55,22 +58,26 @@
             <div id="common-unit-fields" class="hidden"><label class="field">全部数值字段的共同单位<input id="common-unit" placeholder="例如：USD、元、百分比小数" maxlength="160"><small>这是你的声明；工具不会换算单位或验证声明是否正确。</small></label></div>
             <p id="currency-help" class="field-help">币种文本不同或无效时停止相减；不做汇率换算或格式归一化。</p>
           </section>
-          <section class="panel tolerance-panel">
-            <h3>允许多大的差异？</h3><p class="panel-description">默认严格相等。所有数值保留原有精度。</p>
+          <details id="tolerance-options" class="panel tolerance-panel">
+            <summary>允许小误差（可选）<small id="tolerance-summary">当前：不忽略任何差异</small></summary><p class="panel-description">默认严格相等。有明确核对标准时再调整。</p>
             <div class="form-grid">
               <label class="field">绝对容差<input id="absolute-tolerance" value="0" inputmode="decimal" placeholder="例如：0.01"><small>使用被比较数值的单位。</small></label>
               <label class="field">相对容差<input id="relative-tolerance" value="0" inputmode="decimal" placeholder="例如：0.001"><small>填比例：0.01 代表 1%。</small></label>
             </div>
             <div class="formula-note"><strong>允许差额，取下面两者较大值：</strong><span>绝对容差</span><span>相对容差 × 左、右数值绝对值中的较大值</span><small>|右值 − 左值| ≤ 允许差额，即在容差内。</small></div>
-          </section>
+          </details>
         </div>
-        <div class="run-bar"><div><strong>不补零，不隐藏无法比较的行。</strong><p>Excel 公式、无效数值和不明确的键会保留为受阻记录。</p></div><button id="run-compare" class="button button-primary" type="submit" disabled>开始核对 <span aria-hidden="true">→</span></button></div>
+        <div class="run-bar"><div><strong>确认列的含义与单位一致后开始。</strong><p>建议只帮助选列；遗漏、重复和无效值会在完整核对时报告。</p></div><button id="run-compare" class="button button-primary" type="submit" disabled>确认并开始核对</button></div>
+        </section>
       </fieldset>
     </form>
     <div id="results-anchor"></div>
     <div id="stale-results" class="notice stale hidden" role="status" aria-live="polite">输入或规则已改变，先前结果和下载已失效。请重新核对。</div>
     <section id="comparison-results" class="hidden" aria-labelledby="results-heading">
-      <div class="section-heading result-heading"><div><p class="eyebrow">03 / 查看结果</p><h2 id="results-heading">每一项差异，都有出处。</h2><p id="result-context"></p></div><span id="result-outcome" class="tag"></span></div>
+      <div class="section-heading result-heading"><div><h2 id="results-heading" tabindex="-1">核对结果</h2><p id="result-context"></p></div><button id="edit-comparison" class="text-button" type="button">调整对应列或规则</button><span id="result-outcome" class="tag"></span></div>
+      <div id="example-guide" class="notice hidden"><strong>这是演示结果，使用的是虚构数据。</strong><p>这里特意放入金额差异、缺失记录、重复编号和币种不同。看懂后就可以换成自己的文件。</p><button id="use-own-files" class="button" type="button">用自己的两份表开始</button></div>
+      <p id="result-guidance" class="result-guidance"></p>
+      <div class="download-bar"><div><h3>导出结果</h3><p>包含全部结果；页面筛选不会改变报告或证据包。</p><small>结果最多临时保留 3 次、总计约 128 MiB、最长 60 分钟；服务重启即清空。</small></div><div class="download-actions"><button id="download-csv" class="button" type="button" disabled>下载差异表（CSV）</button><button id="download-report" class="button" type="button" disabled>查看报告 <span aria-hidden="true">↗</span></button><button id="download-zip" class="button button-primary" type="button" disabled>下载结果与原表（ZIP） <span aria-hidden="true">↓</span></button></div></div>
       <div class="summary-grid">
         <div class="stat-card total"><span>字段检查</span><strong id="count-total">0</strong><small>不是交易数或金额汇总</small></div>
         <div class="stat-card"><span>容差内</span><strong id="count-matched">0</strong><small>数值差异在允许范围内</small></div>
@@ -92,9 +99,9 @@
         <div class="pagination"><span id="page-label"></span><div><button id="prev-page" class="button button-small" type="button">上一页</button><button id="next-page" class="button button-small" type="button">下一页</button></div></div>
       </section>
       <details class="panel provenance-panel"><summary>本次来源、映射与比较规则</summary><div id="run-provenance"></div><p class="field-help">文件哈希可以核对是否为同一份内容，不能证明来源真实性、业务含义或数据正确性。</p></details>
-      <div class="download-bar"><div><h3>把完整证据留在手边。</h3><p>包含全部结果；页面筛选不会改变报告或证据包。</p><small>结果最多临时保留 3 次、总计约 128 MiB、最长 60 分钟；服务重启即清空。</small></div><div class="download-actions"><button id="download-report" class="button" type="button" disabled>查看报告 <span aria-hidden="true">↗</span></button><button id="download-zip" class="button button-primary" type="button" disabled>下载完整证据包 <span aria-hidden="true">↓</span></button></div></div>
+
     </section>
-    <footer class="app-footer"><span>Financial Control Tower <span id="app-version"></span></span><span>逐项比较 · 明確规则 · 保留原件</span><span>本机处理，不连接外部分析服务</span></footer>
+    <footer class="app-footer"><span>表格对账 <span id="app-version"></span></span><span id="privacy-note">文件只在本机处理，原件保持不变。</span><a href="https://github.com/zheyuliu328/financial-control-tower" target="_blank" rel="noopener noreferrer">源代码与使用说明</a></footer>
   </main>
 </body>
 </html>
