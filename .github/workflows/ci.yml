@@ -111,7 +111,17 @@ jobs:
       - run: python -m build --wheel
       - run: python -m pip install 'openpyxl>=3.1.5,<4' 'defusedxml>=0.7,<1' dist/*.whl
       - run: npm ci
+      - run: npm run test:suggestions
+      - run: npm run build:web
+      - run: npm run test:web-runtime
+        env:
+          TEST_PYTHON: python
       - run: npx playwright install --with-deps chromium
+      - name: Public static browser workflow with real files
+        run: npm run test:public-browser
+        env:
+          TEST_PYTHON: python
+          WEB_TEST_OUTPUT: outputs/browser-public
       - name: Installed browser workflow with actual CSV and XLSX files
         run: npm run test:browser
         env:

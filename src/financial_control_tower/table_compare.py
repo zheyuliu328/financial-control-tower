@@ -469,6 +469,14 @@ th:first-child,td:first-child{{min-width:145px;white-space:normal;overflow-wrap:
 
 def _publish_new(stage, output):
     """Atomically publish a directory without replacing even a concurrently created empty directory."""
+    if sys.platform == "emscripten":
+        # Browser comparisons use one serial Worker and its private synchronous
+        # MEMFS. There is no second writer between this check and the rename.
+        # Desktop platforms retain the native atomic no-replace implementation.
+        if output.exists() or output.is_symlink():
+            raise FileExistsError(str(output))
+        os.rename(stage, output)
+        return
     if sys.platform == "win32":
         os.rename(stage, output)  # Windows rename refuses any existing destination.
         return

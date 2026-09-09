@@ -54,3 +54,7 @@ htmlcov/
 build/
 dist/
 *.egg-info/
+
+# Reproducible, self-hosted browser build
+web-dist/
+out/

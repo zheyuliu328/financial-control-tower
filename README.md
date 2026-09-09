@@ -2,15 +2,33 @@
 
 An offline educational Python project for table comparison, SQLite reconciliation, exception reporting and explicitly labelled rule evaluation. It demonstrates controls on invented examples; it is not a live ERP integration, fraud detector or production audit system.
 
-## Compare your own CSV or Excel files
+## 表格对账：打开网页即可使用
 
-**The graphical entry is available in 2.2.0.** Install `python -m pip install '.[excel]'`, then run `fct-ui` to choose files, worksheets, headers, composite keys and numeric field pairs in a local browser. The page shows field-level differences, blocked inputs and source-row coverage, and downloads a portable evidence ZIP with the exact input snapshots. On macOS, `start-ui.command` installs into a separate local environment and opens the tool. [中文图形操作说明](docs/table-ui.zh-CN.md).
+[在线使用](https://table-check-zheyuliu.mystic-pear-2111.chatgpt.site) · [中文操作说明](docs/table-ui.zh-CN.md)
 
-Files are sent only to the loopback process on your computer. After installation, the browser workflow needs no external connection. Source files are not overwritten. The interface uses the same exact-decimal engine and policies as the CLI; it does not infer business mappings, approve reconciliation or validate a model.
+选两份 CSV 或 Excel，确认用于匹配的编号列、数值列和单位，即可查看差异、遗漏及重复记录。没有文件时，点击“试用示例”可直接看到完整结果。差异表、HTML 报告和含原始文件的 ZIP 均可下载。
 
-![Graphical field comparison using independently invented files](docs/images/table-ui.png)
+网页版无需安装、注册或提供 API key。文件在浏览器内的独立 Worker 中处理，不上传到应用服务器；没有分析埋点或远端计算接口。首次使用会下载约 14 MB 的计算组件。每份文件最多 8 MiB；同次核对最多 20,000 个潜在字段检查。刷新或关闭页面会清空当前结果。ZIP 包含所选文件的**完整副本**，包括没有参与核对的列和工作表，分享前请自行检查。
 
-The screenshot filters two amount differences; the complete result contains 28 field checks. Filtering does not reduce the exported evidence. [Recorded local verification](docs/ui-verification.json) and [independent human trial kit instructions](docs/USER_TRIAL.zh-CN.md) distinguish software checks from human usability evidence.
+网页保留精确十进制比较、复合编号、多数值列、币种检查和显式容差规则。列名建议需要用户确认；不根据五行预览保证编号唯一，也不自动换算、加总或执行 Excel 公式。
+
+### Local app and command line
+
+Python 3.9+: install `python -m pip install '.[excel]'`, then run `fct-ui`. On macOS, `start-ui.command` installs into a separate local environment and opens the tool. The local app accepts files up to 25 MiB and sends bytes only to a loopback process on your computer. After installation it requires no external connection. Both interfaces use the same exact-decimal comparison engine.
+
+### Build the static website
+
+```bash
+npm ci
+npm run build:web
+npm run test:suggestions
+TEST_PYTHON=python3 npm run test:web-runtime
+python3 -m http.server 8770 --directory out
+```
+
+`out/` can be hosted by a static web server over HTTPS. It contains self-hosted Pyodide and pinned Excel dependencies; there are no runtime CDN requests. `web/wheels.lock.json` pins wheel hashes. The builder rejects unknown existing output files, and the downloadable evidence includes a browser build manifest. The source site identity is recorded in `.openai/hosting.json`.
+
+[Earlier installed-app verification](docs/ui-verification.json) is versioned historical evidence. [Human trial instructions](docs/USER_TRIAL.zh-CN.md) describe a trial that has **not** yet been performed; automated and agent-driven checks do not establish human usability or business approval.
 
 ## Run the complete offline example
 
@@ -31,6 +49,7 @@ From a checkout, `python main.py --sample --output /tmp/fct-example-new` uses th
 
 | Component | Current scope |
 | --- | --- |
+| Public browser comparison | Self-hosted static page, browser-local Python Worker, file-first steps, conservative column suggestions, one-click synthetic example, CSV/HTML/ZIP downloads |
 | Local graphical comparison | `fct-ui` provides real file/sheet/header selection, paired key/value mappings, currency/unit and tolerance controls, preview, filtering and complete offline ZIP export |
 | Two-table comparison | `fct-compare` maps CSV/value-only Excel keys and numeric fields, blocks duplicate/invalid keys and currency disagreement, and publishes static HTML, CSV, exact JSON and a manifest |
 | Reconciliation | Both-side missing records, exact-decimal amount comparison, duplicate-key groups, invalid inputs and status exclusions |
