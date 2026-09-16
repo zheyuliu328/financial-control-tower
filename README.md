@@ -1,5 +1,6 @@
 # Financial Control Tower
 
+[预测审阅](https://forecast-review-zheyuliu.mystic-pear-2111.chatgpt.site) · [全部工具与状态](https://forecast-review-zheyuliu.mystic-pear-2111.chatgpt.site/tools.html)
 An offline educational Python project for table comparison, SQLite reconciliation, exception reporting and explicitly labelled rule evaluation. It demonstrates controls on invented examples; it is not a live ERP integration, fraud detector or production audit system.
 
 ## 表格对账：打开网页即可使用

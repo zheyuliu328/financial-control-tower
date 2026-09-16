@@ -1,7 +1,12 @@
 # Portfolio status: Financial Control Tower
 
-Updated 2026-09-09. The current scope includes a local graphical/CLI two-table comparison and an offline educational audit workflow on explicit synthetic fixtures and a documented SQLite schema. This is not production, regulatory or real-fraud certification.
+Updated 2026-09-16. [Open the public browser tool](https://table-check-zheyuliu.mystic-pear-2111.chatgpt.site). The current scope includes public browser-only table comparison, an optional installed local GUI/CLI, and the separate educational SQLite workflow. This is not production, regulatory or real-fraud certification.
 
+## Public browser workflow
+
+Version 2.3 was published on 2026-09-09. It compares CSV/XLSX entirely in a browser Worker without input uploads or registration, preserves missing/duplicate/invalid rows, and exports CSV, HTML and ZIP. Each public input is limited to 8 MiB and a run to 20,000 potential field checks. ZIPs contain complete selected source files. No FX conversion or Excel formula evaluation is performed.
+
+The 2026-09-16 status/navigation update links this tool to [Forecast Review Workbench](https://forecast-review-zheyuliu.mystic-pear-2111.chatgpt.site) and the [shared tool-state page](https://forecast-review-zheyuliu.mystic-pear-2111.chatgpt.site/tools.html). It does not change comparison algorithms. The dated validation counts below remain historical; current release checks belong to the new source revision. External independent human first use and repeat use remain unverified.
 ## Implemented repair
 
 | Prior observed defect | Current implementation and verification requirement |
